@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/Badge';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Icons } from '@/components/ui/Icon';
 import Image from 'next/image';
-import { filterPlayableEpisodes } from '@/lib/utils/client-video-validator';
 
 function PlayerContent() {
   const searchParams = useSearchParams();
@@ -84,9 +83,6 @@ function PlayerContent() {
           episodeCount: data.data.episodes?.length || 0,
           firstEpisodeUrl: data.data.episodes?.[0]?.url
         });
-
-        // Skip client-side validation since videos are already validated during search
-        // The search page already validates all videos before showing them
 
         setVideoData(data.data);
         if (data.data.episodes && data.data.episodes.length > 0) {
@@ -192,8 +188,7 @@ function PlayerContent() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-[var(--accent-color)] border-t-transparent mb-4"></div>
-            <p className="text-[var(--text-color-secondary)] mb-2">正在加载视频详情...</p>
-            <p className="text-[var(--text-color-tertiary)] text-sm">准备播放器...</p>
+            <p className="text-[var(--text-color-secondary)]">正在检测视频源可用性...</p>
           </div>
         ) : videoError && !videoData ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">

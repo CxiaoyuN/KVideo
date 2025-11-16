@@ -133,8 +133,7 @@ export async function validateEpisodeSource(
 }
 
 /**
- * Filter out invalid episodes and return only accessible ones
- * Tests actual accessibility of video URLs
+ * Filter out invalid episodes
  */
 export async function filterValidEpisodes(
   episodes: Array<{ name: string; url: string; index: number }>
@@ -143,25 +142,18 @@ export async function filterValidEpisodes(
   const validFormatEpisodes = episodes.filter(ep => isValidUrlFormat(ep.url));
   
   if (validFormatEpisodes.length === 0) {
-    return []; // Return empty array if no valid formats
+    return episodes.map(ep => ({ ...ep, isValid: false }));
   }
 
-  // Check accessibility for first 5 episodes as sample (increased for better detection)
-  const samplesToCheck = validFormatEpisodes.slice(0, Math.min(5, validFormatEpisodes.length));
+  // Check accessibility for first 3 episodes as sample
+  const samplesToCheck = validFormatEpisodes.slice(0, 3);
   const validationResults = await validateUrls(samplesToCheck.map(ep => ep.url));
   
-  // Count how many samples are actually working
-  const workingCount = validationResults.filter(r => r.isValid).length;
+  // If at least one sample works, assume all with valid format work
+  const hasWorkingEpisodes = validationResults.some(r => r.isValid);
   
-  // If less than 20% of samples work, this source is likely problematic
-  if (workingCount === 0 || (workingCount / samplesToCheck.length) < 0.2) {
-    console.warn(`Episode validation: Only ${workingCount}/${samplesToCheck.length} samples work - source likely broken`);
-    return []; // Return empty to trigger source unavailable
-  }
-  
-  // If at least 20% work, filter to only include valid format episodes
-  return validFormatEpisodes.map(ep => ({
+  return episodes.map(ep => ({
     ...ep,
-    isValid: true,
+    isValid: isValidUrlFormat(ep.url) && (hasWorkingEpisodes || ep.url.includes('.m3u8')),
   }));
 }
