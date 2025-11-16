@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { Button } from '@/components/ui/Button';
@@ -8,67 +8,173 @@ import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Icons } from '@/components/ui/Icon';
+import { SearchLoadingAnimation } from '@/components/SearchLoadingAnimation';
 import Image from 'next/image';
 
 export default function Home() {
+  const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [availableSources, setAvailableSources] = useState<Array<{id: string, name: string, count: number}>>([]);
-  const [validationStatus, setValidationStatus] = useState<string>('');
+  const [hasSearched, setHasSearched] = useState(false);
+  const [availableSources, setAvailableSources] = useState<any[]>([]);
+  const [currentSource, setCurrentSource] = useState<string>('');
+  const [checkedSources, setCheckedSources] = useState(0);
+  const [searchStage, setSearchStage] = useState<'searching' | 'checking'>('searching');
+  const [checkedVideos, setCheckedVideos] = useState(0);
+  const [totalVideos, setTotalVideos] = useState(0);
   const router = useRouter();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
+    if (!query.trim() || loading) return; // Prevent multiple searches
+
+    // Abort any previous search
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this search
+    abortControllerRef.current = new AbortController();
 
     setLoading(true);
-    setValidationStatus('搜索中...');
+    setHasSearched(true);
+    setResults([]);
+    setAvailableSources([]);
+    setCheckedSources(0);
+    setSearchStage('searching');
+    setCheckedVideos(0);
+    setTotalVideos(0);
+    
     try {
       // Get all enabled source IDs
       const sourceIds = ['custom_0', 'custom_1', 'custom_2', 'custom_3', 'custom_4', 
                          'custom_5', 'custom_6', 'custom_7', 'custom_8', 'custom_9',
                          'custom_10', 'custom_11', 'custom_12', 'custom_13', 'custom_14', 'custom_15'];
       
-      const response = await fetch('/api/search', {
+      // Use streaming API
+      const response = await fetch('/api/search-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, sources: sourceIds }),
+        signal: abortControllerRef.current.signal,
       });
-      const data = await response.json();
-      
-      if (data.success) {
-        setValidationStatus(`已检测 ${data.totalSources || 0} 个源，${data.availableSources || 0} 个可用`);
-        
-        // Filter out sources with no results and add source names
-        const resultsWithSources = data.sources
-          .filter((s: any) => s.results.length > 0)
-          .flatMap((s: any) => 
-            s.results.map((result: any) => ({
-              ...result,
-              sourceName: getSourceName(s.source),
-            }))
-          );
-        setResults(resultsWithSources);
-        
-        // Track available sources
-        const sourcesWithResults = data.sources
-          .filter((s: any) => s.results.length > 0)
-          .map((s: any) => ({
-            id: s.source,
-            name: getSourceName(s.source),
-            count: s.results.length,
-          }));
-        setAvailableSources(sourcesWithResults);
 
-        // Clear validation status after 3 seconds
-        setTimeout(() => setValidationStatus(''), 3000);
+      if (!response.ok) {
+        throw new Error('Search failed');
       }
-    } catch (error) {
-      console.error('Search error:', error);
-      setValidationStatus('搜索失败');
-    } finally {
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error('No response stream');
+      }
+
+      let buffer = '';
+      const allVideos: any[] = [];
+      const sourceVideoCounts = new Map<string, number>();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+
+          try {
+            const data = JSON.parse(line.slice(6));
+
+            switch (data.type) {
+              case 'progress':
+                if (data.stage === 'searching') {
+                  setSearchStage('searching');
+                  setCheckedSources(data.checkedSources);
+                } else if (data.stage === 'checking') {
+                  setSearchStage('checking');
+                  setCheckedVideos(data.checkedVideos);
+                  setTotalVideos(data.totalVideos);
+                }
+                break;
+
+              case 'videos':
+                // Add new videos immediately - NO DELAY
+                const newVideos = data.videos.map((video: any) => ({
+                  ...video,
+                  sourceName: getSourceName(video.source),
+                  isNew: true,
+                  addedAt: Date.now(), // Track when video was added
+                }));
+
+                console.log('📹 收到新视频:', newVideos.length, '个');
+
+                // Add to allVideos array
+                allVideos.push(...newVideos);
+                
+                console.log('🎬 当前总视频数:', allVideos.length);
+                
+                // Update state with all videos
+                setResults([...allVideos]);
+
+                // Update progress
+                setCheckedVideos(data.checkedVideos);
+                setTotalVideos(data.totalVideos);
+
+                // Update source counts
+                newVideos.forEach((video: any) => {
+                  const count = sourceVideoCounts.get(video.source) || 0;
+                  sourceVideoCounts.set(video.source, count + 1);
+                });
+
+                // Update available sources display
+                const sourcesArray = Array.from(sourceVideoCounts.entries()).map(([sourceId, count]) => ({
+                  id: sourceId,
+                  name: getSourceName(sourceId),
+                  count,
+                }));
+                setAvailableSources(sourcesArray);
+
+                // Remove animation flag only for these new videos after delay
+                setTimeout(() => {
+                  setResults(prev => prev.map(v => {
+                    // Only remove isNew flag from videos that were just added
+                    const wasJustAdded = newVideos.some((nv: any) => 
+                      nv.vod_id === v.vod_id && nv.source === v.source && nv.addedAt === v.addedAt
+                    );
+                    if (wasJustAdded) {
+                      return { ...v, isNew: false };
+                    }
+                    return v;
+                  }));
+                }, 300);
+                break;
+
+              case 'complete':
+                setCheckedVideos(data.totalVideos);
+                setLoading(false);
+                break;
+
+              case 'error':
+                throw new Error(data.error);
+            }
+          } catch (err) {
+            // Skip invalid JSON lines
+          }
+        }
+      }
+    } catch (error: any) {
+      // Only show error if not aborted by user
+      if (error.name !== 'AbortError') {
+        console.error('Search error:', error);
+      }
       setLoading(false);
+    } finally {
+      setCurrentSource('');
     }
   };
 
@@ -95,6 +201,12 @@ export default function Home() {
   };
 
   const handleVideoClick = (video: any) => {
+    // Abort ongoing search when user clicks a video
+    if (abortControllerRef.current && loading) {
+      abortControllerRef.current.abort();
+      setLoading(false);
+    }
+
     const params = new URLSearchParams({
       id: video.vod_id,
       source: video.source,
@@ -107,7 +219,7 @@ export default function Home() {
     <div className="min-h-screen">
       {/* Glass Navbar */}
       <nav className="sticky top-4 z-50 mx-4 mt-4 mb-8">
-        <div className="max-w-7xl mx-auto bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] [-webkit-backdrop-filter:blur(25px)_saturate(180%)] border border-[var(--glass-border)] rounded-[var(--radius-2xl)] shadow-[var(--shadow-md)] px-6 py-4 transition-all duration-[var(--transition-fluid)]">
+        <div className="max-w-7xl mx-auto bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] [-webkit-backdrop-filter:blur(25px)_saturate(180%)] border border-[var(--glass-border)] shadow-[var(--shadow-md)] px-6 py-4 transition-all duration-[var(--transition-fluid)]" style={{ borderRadius: 'var(--radius-2xl)' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 relative flex items-center justify-center">
@@ -151,47 +263,66 @@ export default function Home() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="搜索电影、电视剧、综艺..."
                 className="text-lg pr-32"
+                disabled={loading}
               />
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !query.trim()}
                 variant="primary"
                 className="absolute right-2 top-1/2 -translate-y-1/2 px-8"
               >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                    </svg>
-                    检测中...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Icons.Search size={20} />
-                    搜索
-                  </span>
-                )}
+                <span className="flex items-center gap-2">
+                  <Icons.Search size={20} />
+                  搜索
+                </span>
               </Button>
             </div>
-            {/* Validation Status */}
-            {validationStatus && (
-              <div className="mt-3 text-sm text-[var(--text-color-secondary)] animate-fade-in">
-                {validationStatus}
+            
+            {/* Loading Animation - Replaces search bar content */}
+            {loading && (
+              <div className="mt-4">
+                <SearchLoadingAnimation 
+                  currentSource={currentSource}
+                  checkedSources={checkedSources}
+                  totalSources={16}
+                  checkedVideos={checkedVideos}
+                  totalVideos={totalVideos}
+                  stage={searchStage}
+                />
               </div>
             )}
           </form>
         </div>
 
         {/* Results Section */}
-        {results.length > 0 && (
+        {(results.length >= 10 || (!loading && results.length > 0)) && (
           <div className="animate-fade-in">
             <div className="flex flex-col gap-4 mb-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <h3 className="text-2xl font-bold text-[var(--text-color)] flex items-center gap-3">
                   <span>搜索结果</span>
-                  <Badge variant="primary">{results.length} 个视频</Badge>
                 </h3>
+                <div className="flex items-center gap-3">
+                  {loading && (
+                    <>
+                      <Badge variant="secondary" className="text-sm">
+                        <span className="flex items-center gap-2">
+                          <Icons.Search size={14} />
+                          已检测 {checkedVideos}/{totalVideos}
+                        </span>
+                      </Badge>
+                      <Badge variant="primary" className="text-sm">
+                        <span className="flex items-center gap-2">
+                          <Icons.Check size={14} />
+                          可用视频 {results.length}/{totalVideos}
+                        </span>
+                      </Badge>
+                    </>
+                  )}
+                  {!loading && (
+                    <Badge variant="primary">{results.length} 个视频</Badge>
+                  )}
+                </div>
               </div>
               
               {/* Available Sources */}
@@ -221,10 +352,10 @@ export default function Home() {
                 <Card
                   key={`${video.vod_id}-${index}`}
                   onClick={() => handleVideoClick(video)}
-                  className="p-0 overflow-hidden group"
+                  className={`p-0 overflow-hidden group cursor-pointer ${video.isNew ? 'animate-scale-in' : ''}`}
                 >
                   {/* Poster */}
-                  <div className="relative aspect-[2/3] bg-[color-mix(in_srgb,var(--glass-bg)_50%,transparent)] overflow-hidden rounded-t-[var(--radius-2xl)]">
+                  <div className="relative aspect-[2/3] bg-[color-mix(in_srgb,var(--glass-bg)_50%,transparent)] overflow-hidden" style={{ borderRadius: 'var(--radius-2xl) var(--radius-2xl) 0 0' }}>
                     {video.vod_pic ? (
                       <img
                         src={video.vod_pic}
@@ -282,11 +413,11 @@ export default function Home() {
           </div>
         )}
 
-        {/* Empty State */}
-        {!loading && results.length === 0 && !query && (
+        {/* Empty State - Initial Homepage */}
+        {!loading && !hasSearched && (
           <div className="text-center py-20 animate-fade-in">
             <div className="mb-8">
-              <div className="inline-flex items-center justify-center w-32 h-32 rounded-[var(--radius-full)] bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] mb-6">
+              <div className="inline-flex items-center justify-center w-32 h-32 bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] mb-6" style={{ borderRadius: 'var(--radius-full)' }}>
                 <Icons.Film size={64} className="text-[var(--text-color-secondary)]" />
               </div>
               <h3 className="text-3xl font-bold text-[var(--text-color)] mb-4">
@@ -324,18 +455,27 @@ export default function Home() {
           </div>
         )}
 
-        {/* No Results */}
-        {!loading && results.length === 0 && query && (
+        {/* No Results - After Search */}
+        {!loading && hasSearched && results.length === 0 && (
           <div className="text-center py-20 animate-fade-in">
-            <div className="inline-flex items-center justify-center w-32 h-32 rounded-[var(--radius-full)] bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] mb-6">
+            <div className="inline-flex items-center justify-center w-32 h-32 bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] mb-6" style={{ borderRadius: 'var(--radius-full)' }}>
               <Icons.Search size={64} className="text-[var(--text-color-secondary)]" />
             </div>
             <h3 className="text-3xl font-bold text-[var(--text-color)] mb-4">
               未找到相关内容
             </h3>
-            <p className="text-lg text-[var(--text-color-secondary)]">
+            <p className="text-lg text-[var(--text-color-secondary)] mb-6">
               试试其他关键词或检查拼写
             </p>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setHasSearched(false);
+                setQuery('');
+              }}
+            >
+              返回首页
+            </Button>
           </div>
         )}
       </main>

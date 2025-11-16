@@ -49,7 +49,6 @@ async function checkVideoUrl(url: string, retries = MAX_RETRIES): Promise<boolea
     } catch (error) {
       // If last attempt, return false
       if (attempt === retries) {
-        console.error(`Failed to check URL after ${retries + 1} attempts:`, error);
         return false;
       }
       // Wait before retry
@@ -77,10 +76,58 @@ function extractFirstVideoUrl(video: any): string | null {
       }
     }
   } catch (error) {
-    console.error('Failed to extract video URL:', error);
+    // Silent error
   }
 
   return null;
+}
+
+/**
+ * Check if a single video is playable
+ */
+export async function checkVideoAvailability(video: any): Promise<boolean> {
+  const videoUrl = extractFirstVideoUrl(video);
+  
+  if (!videoUrl) {
+    return false;
+  }
+
+  return await checkVideoUrl(videoUrl);
+}
+
+/**
+ * Check multiple videos in parallel with concurrency limit
+ */
+export async function checkMultipleVideos(
+  videos: any[],
+  concurrency: number = 10,
+  onProgress?: (checked: number, total: number) => void
+): Promise<any[]> {
+  const availableVideos: any[] = [];
+  let checkedCount = 0;
+  
+  // Process videos in batches to avoid overwhelming the system
+  for (let i = 0; i < videos.length; i += concurrency) {
+    const batch = videos.slice(i, i + concurrency);
+    const results = await Promise.all(
+      batch.map(async (video) => {
+        const isAvailable = await checkVideoAvailability(video);
+        checkedCount++;
+        
+        // Report progress
+        if (onProgress) {
+          onProgress(checkedCount, videos.length);
+        }
+        
+        return isAvailable ? video : null;
+      })
+    );
+    
+    // Add available videos to result
+    availableVideos.push(...results.filter(v => v !== null));
+  }
+  
+  return availableVideos;
 }
 
 /**
@@ -110,12 +157,9 @@ export async function checkSourceAvailability(
     
     if (!videoUrl) continue;
 
-    console.log(`Checking source ${sourceName} with URL:`, videoUrl.substring(0, 50) + '...');
-
     const isAvailable = await checkVideoUrl(videoUrl);
 
     if (isAvailable) {
-      console.log(`✅ Source ${sourceName} is AVAILABLE (checked in ${Date.now() - startTime}ms)`);
       return {
         sourceId,
         sourceName,
@@ -126,7 +170,6 @@ export async function checkSourceAvailability(
     }
   }
 
-  console.log(`❌ Source ${sourceName} is UNAVAILABLE (checked in ${Date.now() - startTime}ms)`);
   return {
     sourceId,
     sourceName,

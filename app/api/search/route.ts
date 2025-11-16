@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchVideos } from '@/lib/api/client';
 import { getEnabledSources, getSourceById } from '@/lib/api/video-sources';
-import { checkMultipleSources, filterByAvailableSources } from '@/lib/utils/source-checker';
+import { checkMultipleVideos } from '@/lib/utils/source-checker';
 import type { SearchRequest, SearchResult } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
@@ -68,43 +68,38 @@ export async function POST(request: NextRequest) {
       return sourceNames[sourceId] || sourceId;
     };
 
-    // Check source availability by testing sample videos
-    console.log(`🔍 Checking availability of ${searchResults.length} sources...`);
-    const sourcesWithVideos = searchResults
-      .filter(result => result.results.length > 0)
-      .map(result => ({
-        sourceId: result.source,
-        sourceName: getSourceName(result.source),
-        videos: result.results.slice(0, 3), // Use first 3 videos as samples
-      }));
-
-    const availabilityResults = await checkMultipleSources(sourcesWithVideos);
-    
-    const availableCount = availabilityResults.filter(r => r.isAvailable).length;
-    console.log(`✅ ${availableCount} out of ${availabilityResults.length} sources are available`);
-
-    // Filter results to only include videos from available sources
+    // Get all videos from all sources
     const allVideos = searchResults.flatMap(r => r.results);
-    const availableVideos = filterByAvailableSources(allVideos, availabilityResults);
 
-    // Group available videos back by source
-    const availableSources = availabilityResults
-      .filter(r => r.isAvailable)
-      .map(r => {
-        const sourceVideos = availableVideos.filter(v => v.source === r.sourceId);
-        return {
-          source: r.sourceId,
-          results: sourceVideos,
-          responseTime: searchResults.find(sr => sr.source === r.sourceId)?.responseTime,
-        };
-      });
+    // Check each video individually
+    const availableVideos = await checkMultipleVideos(allVideos, 10);
 
-    // Format response
-    const response: SearchResult[] = availableSources.map(result => ({
-      results: result.results,
-      source: result.source,
-      responseTime: result.responseTime,
+    // Group available videos by source
+    const videosBySource = new Map<string, any[]>();
+    for (const video of availableVideos) {
+      const sourceId = video.source;
+      if (!videosBySource.has(sourceId)) {
+        videosBySource.set(sourceId, []);
+      }
+      videosBySource.get(sourceId)!.push(video);
+    }
+
+    // Build response with actual video counts per source
+    const response: SearchResult[] = Array.from(videosBySource.entries()).map(([sourceId, videos]) => ({
+      results: videos,
+      source: sourceId,
+      responseTime: searchResults.find(sr => sr.source === sourceId)?.responseTime,
     }));
+
+    // Calculate source statistics
+    const sourceStats = sourceIds.map(sourceId => {
+      const count = videosBySource.get(sourceId)?.length || 0;
+      return {
+        sourceId,
+        sourceName: getSourceName(sourceId),
+        count,
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -112,9 +107,7 @@ export async function POST(request: NextRequest) {
       page,
       sources: response,
       totalResults: availableVideos.length,
-      availableSources: availableCount,
-      totalSources: availabilityResults.length,
-      sourceAvailability: availabilityResults,
+      sourceStats, // Include real counts per source
     });
   } catch (error) {
     console.error('Search API error:', error);
@@ -187,43 +180,38 @@ export async function GET(request: NextRequest) {
       return sourceNames[sourceId] || sourceId;
     };
 
-    // Check source availability by testing sample videos
-    console.log(`🔍 [GET] Checking availability of ${searchResults.length} sources...`);
-    const sourcesWithVideos = searchResults
-      .filter(result => result.results.length > 0)
-      .map(result => ({
-        sourceId: result.source,
-        sourceName: getSourceName(result.source),
-        videos: result.results.slice(0, 3), // Use first 3 videos as samples
-      }));
-
-    const availabilityResults = await checkMultipleSources(sourcesWithVideos);
-    
-    const availableCount = availabilityResults.filter(r => r.isAvailable).length;
-    console.log(`✅ [GET] ${availableCount} out of ${availabilityResults.length} sources are available`);
-
-    // Filter results to only include videos from available sources
+    // Get all videos from all sources
     const allVideos = searchResults.flatMap(r => r.results);
-    const availableVideos = filterByAvailableSources(allVideos, availabilityResults);
 
-    // Group available videos back by source
-    const availableSources = availabilityResults
-      .filter(r => r.isAvailable)
-      .map(r => {
-        const sourceVideos = availableVideos.filter(v => v.source === r.sourceId);
-        return {
-          source: r.sourceId,
-          results: sourceVideos,
-          responseTime: searchResults.find(sr => sr.source === r.sourceId)?.responseTime,
-        };
-      });
+    // Check each video individually
+    const availableVideos = await checkMultipleVideos(allVideos, 10);
 
-    // Format response
-    const response: SearchResult[] = availableSources.map(result => ({
-      results: result.results,
-      source: result.source,
-      responseTime: result.responseTime,
+    // Group available videos by source
+    const videosBySource = new Map<string, any[]>();
+    for (const video of availableVideos) {
+      const sourceId = video.source;
+      if (!videosBySource.has(sourceId)) {
+        videosBySource.set(sourceId, []);
+      }
+      videosBySource.get(sourceId)!.push(video);
+    }
+
+    // Build response with actual video counts per source
+    const response: SearchResult[] = Array.from(videosBySource.entries()).map(([sourceId, videos]) => ({
+      results: videos,
+      source: sourceId,
+      responseTime: searchResults.find(sr => sr.source === sourceId)?.responseTime,
     }));
+
+    // Calculate source statistics
+    const sourceStats = sourceIds.map(sourceId => {
+      const count = videosBySource.get(sourceId)?.length || 0;
+      return {
+        sourceId,
+        sourceName: getSourceName(sourceId),
+        count,
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -231,9 +219,7 @@ export async function GET(request: NextRequest) {
       page,
       sources: response,
       totalResults: availableVideos.length,
-      availableSources: availableCount,
-      totalSources: availabilityResults.length,
-      sourceAvailability: availabilityResults,
+      sourceStats, // Include real counts per source
     });
   } catch (error) {
     console.error('Search API error:', error);
