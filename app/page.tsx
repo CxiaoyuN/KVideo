@@ -12,6 +12,7 @@ import { NoResults } from '@/components/search/NoResults';
 import { ResultsHeader } from '@/components/search/ResultsHeader';
 import { TypeBadges } from '@/components/search/TypeBadges';
 import { PopularFeatures } from '@/components/home/PopularFeatures';
+import { WatchHistorySidebar } from '@/components/history/WatchHistorySidebar';
 import { useSearchCache } from '@/lib/hooks/useSearchCache';
 import { useParallelSearch } from '@/lib/hooks/useParallelSearch';
 import { useTypeBadges } from '@/lib/hooks/useTypeBadges';
@@ -167,6 +168,9 @@ function HomePage() {
           <NoResults onReset={handleReset} />
         )}
       </main>
+
+      {/* Watch History Sidebar */}
+      <WatchHistorySidebar />
     </div>
   );
 }

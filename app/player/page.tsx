@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
@@ -10,11 +10,14 @@ import { VideoMetadata } from '@/components/player/VideoMetadata';
 import { EpisodeList } from '@/components/player/EpisodeList';
 import { PlayerError } from '@/components/player/PlayerError';
 import { useVideoPlayer } from '@/lib/hooks/useVideoPlayer';
+import { useHistoryStore } from '@/lib/store/history-store';
+import { WatchHistorySidebar } from '@/components/history/WatchHistorySidebar';
 import Image from 'next/image';
 
 function PlayerContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { addToHistory } = useHistoryStore();
 
   const videoId = searchParams.get('id');
   const source = searchParams.get('source');
@@ -38,6 +41,30 @@ function PlayerContent() {
     setVideoError,
     fetchVideoDetails,
   } = useVideoPlayer(videoId, source, episodeParam);
+
+  // Add initial history entry when video data is loaded
+  useEffect(() => {
+    if (videoData && playUrl && videoId) {
+      // Map episodes to include index
+      const mappedEpisodes = videoData.episodes?.map((ep, idx) => ({
+        name: ep.name || `第${idx + 1}集`,
+        url: ep.url,
+        index: idx,
+      })) || [];
+
+      addToHistory(
+        videoId,
+        videoData.vod_name || title || '未知视频',
+        playUrl,
+        currentEpisode,
+        source,
+        0, // Initial playback position
+        0, // Will be updated by VideoPlayer
+        videoData.vod_pic,
+        mappedEpisodes
+      );
+    }
+  }, [videoData, playUrl, videoId, currentEpisode, source, title, addToHistory]);
 
   const handleEpisodeClick = (episode: any, index: number) => {
     setCurrentEpisode(index);
@@ -124,6 +151,9 @@ function PlayerContent() {
           </div>
         )}
       </main>
+
+      {/* Watch History Sidebar */}
+      <WatchHistorySidebar />
     </div>
   );
 }

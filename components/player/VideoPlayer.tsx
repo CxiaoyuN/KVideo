@@ -1,9 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Icons } from '@/components/ui/Icon';
+import { useHistoryStore } from '@/lib/store/history-store';
 
 interface VideoPlayerProps {
   playUrl: string;
@@ -16,6 +18,80 @@ export function VideoPlayer({ playUrl, videoId, currentEpisode, onBack }: VideoP
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoError, setVideoError] = useState<string>('');
   const [isVideoLoading, setIsVideoLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const { addToHistory } = useHistoryStore();
+  
+  // Get video metadata from URL params
+  const source = searchParams.get('source') || '';
+  const title = searchParams.get('title') || '未知视频';
+  
+  // Save progress to history periodically
+  useEffect(() => {
+    if (!videoRef.current || !videoId || !playUrl) return;
+
+    const video = videoRef.current;
+    let lastSavedTime = 0;
+
+    const updateProgress = () => {
+      if (video && video.duration > 0) {
+        const position = video.currentTime;
+        const duration = video.duration;
+        
+        // Only save if we have meaningful progress (more than 1 second)
+        // and if at least 5 seconds have passed since last save
+        if (position > 1 && Math.abs(position - lastSavedTime) >= 5) {
+          lastSavedTime = position;
+          console.log(`[Watch History] Saving progress: ${position.toFixed(1)}s / ${duration.toFixed(1)}s`);
+          
+          addToHistory(
+            videoId,
+            title,
+            playUrl,
+            currentEpisode,
+            source,
+            position,
+            duration,
+            undefined, // poster - updated from player page
+            [] // episodes - updated from player page
+          );
+        }
+      }
+    };
+
+    // Update progress on time update (throttled by the 5 second check)
+    const handleTimeUpdate = () => updateProgress();
+
+    // Also update on pause
+    const handlePause = () => {
+      if (video && video.duration > 0) {
+        console.log('[Watch History] Saving on pause');
+        updateProgress();
+      }
+    };
+    
+    // Update when leaving the page
+    const handleBeforeUnload = () => {
+      if (video && video.duration > 0) {
+        console.log('[Watch History] Saving before unload');
+        updateProgress();
+      }
+    };
+
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('pause', handlePause);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('pause', handlePause);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Save progress one last time on unmount
+      if (video && video.duration > 0) {
+        console.log('[Watch History] Saving on unmount');
+        updateProgress();
+      }
+    };
+  }, [videoId, playUrl, currentEpisode, source, title, addToHistory]);
 
   const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     const video = e.currentTarget;
