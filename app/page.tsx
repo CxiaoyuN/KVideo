@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/search/EmptyState';
 import { NoResults } from '@/components/search/NoResults';
 import { ResultsHeader } from '@/components/search/ResultsHeader';
 import { TypeBadges } from '@/components/search/TypeBadges';
+import { PopularFeatures } from '@/components/home/PopularFeatures';
 import { useSearchCache } from '@/lib/hooks/useSearchCache';
 import { useParallelSearch } from '@/lib/hooks/useParallelSearch';
 import { useTypeBadges } from '@/lib/hooks/useTypeBadges';
@@ -85,57 +86,53 @@ function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Glass Navbar */}
-      <nav className="sticky top-4 z-50 mx-4 mt-4 mb-8">
-        <div className="max-w-7xl mx-auto bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] [-webkit-backdrop-filter:blur(25px)_saturate(180%)] border border-[var(--glass-border)] shadow-[var(--shadow-md)] px-6 py-4 transition-all duration-[var(--transition-fluid)]" style={{ borderRadius: 'var(--radius-2xl)' }}>
-          <div className="flex items-center justify-between">
-            <Link 
-              href="/" 
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
-              onClick={handleReset}
-            >
-              <div className="w-10 h-10 relative flex items-center justify-center">
-                <Image 
-                  src="/icon.png" 
-                  alt="KVideo" 
-                  width={40} 
-                  height={40}
-                  className="object-contain"
-                />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-[var(--text-color)]">KVideo</h1>
-                <p className="text-xs text-[var(--text-color-secondary)]">视频聚合平台</p>
-              </div>
-            </Link>
-            <ThemeSwitcher />
+      <nav className="sticky top-0 z-50 pt-4 pb-2">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] [-webkit-backdrop-filter:blur(25px)_saturate(180%)] border border-[var(--glass-border)] shadow-[var(--shadow-md)] px-6 py-4 transition-all duration-[var(--transition-fluid)]" style={{ borderRadius: 'var(--radius-2xl)' }}>
+            <div className="flex items-center justify-between">
+              <Link 
+                href="/" 
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+                onClick={handleReset}
+              >
+                <div className="w-10 h-10 relative flex items-center justify-center">
+                  <Image 
+                    src="/icon.png" 
+                    alt="KVideo" 
+                    width={40} 
+                    height={40}
+                    className="object-contain"
+                  />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-[var(--text-color)]">KVideo</h1>
+                  <p className="text-xs text-[var(--text-color-secondary)]">视频聚合平台</p>
+                </div>
+              </Link>
+              <ThemeSwitcher />
+            </div>
           </div>
         </div>
       </nav>
 
+      {/* Search Form - Separate from navbar */}
+      <div className="max-w-7xl mx-auto px-4 mt-6 mb-8">
+        <SearchForm
+          onSearch={handleSearch}
+          onClear={handleReset}
+          isLoading={loading}
+          initialQuery={query}
+          currentSource=""
+          checkedSources={completedSources}
+          totalSources={totalSources}
+          checkedVideos={0}
+          totalVideos={totalVideosFound}
+          searchStage="searching"
+        />
+      </div>
+
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        {/* Hero Section with Search */}
-        <div className="text-center mb-12 animate-slide-up">
-          <h2 className="text-5xl md:text-6xl font-bold text-[var(--text-color)] mb-4">
-            发现精彩视频
-          </h2>
-          <p className="text-xl text-[var(--text-color-secondary)] mb-8">
-            多源聚合 · 智能搜索 · 极致体验
-          </p>
-
-          <SearchForm
-            onSearch={handleSearch}
-            isLoading={loading}
-            initialQuery={query}
-            currentSource=""
-            checkedSources={completedSources}
-            totalSources={totalSources}
-            checkedVideos={0}
-            totalVideos={totalVideosFound}
-            searchStage="searching"
-          />
-        </div>
-
         {/* Results Section */}
         {(results.length >= 1 || (!loading && results.length > 0)) && (
           <div className="animate-fade-in">
@@ -162,8 +159,8 @@ function HomePage() {
           </div>
         )}
 
-        {/* Empty State - Initial Homepage */}
-        {!loading && !hasSearched && <EmptyState />}
+        {/* Popular Features - Homepage */}
+        {!loading && !hasSearched && <PopularFeatures onSearch={handleSearch} />}
 
         {/* No Results */}
         {!loading && hasSearched && results.length === 0 && (

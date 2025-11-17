@@ -141,7 +141,7 @@ export function useParallelSearch(
    * Perform parallel search with streaming results
    */
   const performSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim() || loading) return;
+    if (!searchQuery.trim()) return;
 
     // Abort any ongoing search
     if (abortControllerRef.current) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Icons } from '@/components/ui/Icon';
@@ -8,6 +8,7 @@ import { SearchLoadingAnimation } from '@/components/SearchLoadingAnimation';
 
 interface SearchFormProps {
   onSearch: (query: string) => void;
+  onClear?: () => void;
   isLoading: boolean;
   initialQuery?: string;
   currentSource?: string;
@@ -20,6 +21,7 @@ interface SearchFormProps {
 
 export function SearchForm({
   onSearch,
+  onClear,
   isLoading,
   initialQuery = '',
   currentSource = '',
@@ -31,10 +33,22 @@ export function SearchForm({
 }: SearchFormProps) {
   const [query, setQuery] = useState(initialQuery);
 
+  // Update query when initialQuery changes
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
+    if (query.trim() && !isLoading) {
       onSearch(query);
+    }
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    if (onClear) {
+      onClear();
     }
   };
 
@@ -47,11 +61,19 @@ export function SearchForm({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="搜索电影、电视剧、综艺..."
           className="text-lg pr-32"
-          disabled={isLoading}
         />
+        {query && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-32 top-1/2 -translate-y-1/2 p-2 text-[var(--text-color-secondary)] hover:text-[var(--text-color)] transition-colors"
+          >
+            <Icons.X size={20} />
+          </button>
+        )}
         <Button
           type="submit"
-          disabled={isLoading || !query.trim()}
+          disabled={!query.trim()}
           variant="primary"
           className="absolute right-2 top-1/2 -translate-y-1/2 px-8"
         >
