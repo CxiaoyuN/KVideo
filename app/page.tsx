@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/search/EmptyState';
 import { NoResults } from '@/components/search/NoResults';
 import { ResultsHeader } from '@/components/search/ResultsHeader';
 import { useSearchCache } from '@/lib/hooks/useSearchCache';
-import { useSearchStream } from '@/lib/hooks/useSearchStream';
+import { useParallelSearch } from '@/lib/hooks/useParallelSearch';
 
 function HomePage() {
   const router = useRouter();
@@ -27,16 +27,15 @@ function HomePage() {
     loading,
     results,
     availableSources,
-    checkedSources,
-    searchStage,
-    checkedVideos,
-    totalVideos,
-    currentSource,
+    completedSources,
+    totalSources,
+    totalVideosFound,
     performSearch,
     resetSearch,
-  } = useSearchStream(
+    loadCachedResults,
+  } = useParallelSearch(
     saveToCache,
-    (q) => router.replace(`/?q=${encodeURIComponent(q)}`, { scroll: false })
+    (q: string) => router.replace(`/?q=${encodeURIComponent(q)}`, { scroll: false })
   );
 
   // Load cached results on mount
@@ -49,21 +48,21 @@ function HomePage() {
     
     if (urlQuery) {
       setQuery(urlQuery);
-      if (cached && cached.query === urlQuery) {
-        console.log('📦 Loading cached results for:', urlQuery);
-        // Note: Would need to set results here if we expose setState from hook
+      if (cached && cached.query === urlQuery && cached.results.length > 0) {
+        console.log('📦 Loading cached results for:', urlQuery, cached.results.length, 'videos');
         setHasSearched(true);
+        loadCachedResults(cached.results, cached.availableSources);
       } else {
         console.log('🔍 Auto-searching for URL query:', urlQuery);
         setTimeout(() => handleSearch(urlQuery), 100);
       }
     }
-  }, [searchParams]);
+  }, [searchParams, loadFromCache, loadCachedResults]);
 
   const handleSearch = (searchQuery: string) => {
     setQuery(searchQuery);
     setHasSearched(true);
-    performSearch(searchQuery, true);
+    performSearch(searchQuery);
   };
 
   const handleReset = () => {
@@ -118,12 +117,12 @@ function HomePage() {
             onSearch={handleSearch}
             isLoading={loading}
             initialQuery={query}
-            currentSource={currentSource}
-            checkedSources={checkedSources}
-            totalSources={16}
-            checkedVideos={checkedVideos}
-            totalVideos={totalVideos}
-            searchStage={searchStage}
+            currentSource=""
+            checkedSources={completedSources}
+            totalSources={totalSources}
+            checkedVideos={0}
+            totalVideos={totalVideosFound}
+            searchStage="searching"
           />
         </div>
 
@@ -133,8 +132,8 @@ function HomePage() {
             <ResultsHeader
               loading={loading}
               resultsCount={results.length}
-              checkedVideos={checkedVideos}
-              totalVideos={totalVideos}
+              checkedVideos={0}
+              totalVideos={totalVideosFound}
               availableSources={availableSources}
             />
             <VideoGrid videos={results} />

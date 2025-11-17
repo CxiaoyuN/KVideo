@@ -15,6 +15,7 @@ interface Video {
   source: string;
   sourceName?: string;
   isNew?: boolean;
+  isVerifying?: boolean;
 }
 
 interface VideoGridProps {
@@ -64,6 +65,15 @@ export function VideoGrid({ videos, className = '' }: VideoGridProps) {
                   <div className="absolute top-2 left-2 z-10">
                     <Badge variant="primary" className="text-xs backdrop-blur-md bg-[var(--accent-color)]/90">
                       {video.sourceName}
+                    </Badge>
+                  </div>
+                )}
+                
+                {/* Verifying Badge - Top Right */}
+                {video.isVerifying && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <Badge variant="secondary" className="text-xs backdrop-blur-md bg-yellow-500/90 text-white animate-pulse">
+                      验证中
                     </Badge>
                   </div>
                 )}
