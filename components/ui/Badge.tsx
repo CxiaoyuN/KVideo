@@ -4,13 +4,36 @@ interface BadgeProps {
   children: React.ReactNode;
   variant?: 'primary' | 'secondary';
   className?: string;
+  icon?: React.ReactNode;
+  iconPosition?: 'left' | 'right';
 }
 
-export function Badge({ children, variant = 'primary', className = '' }: BadgeProps) {
+export function Badge({ 
+  children, 
+  variant = 'primary', 
+  className = '',
+  icon,
+  iconPosition = 'left'
+}: BadgeProps) {
   const variants = {
     primary: "bg-[var(--accent-color)] text-white shadow-[var(--shadow-sm)]",
     secondary: "bg-[var(--glass-bg)] backdrop-blur-[10px] [-webkit-backdrop-filter:blur(10px)] border border-[var(--glass-border)] text-[var(--text-color)]",
   };
+
+  const iconElement = icon && (
+    <span 
+      className={`inline-flex items-center justify-center transition-transform duration-200 ${
+        iconPosition === 'left' ? 'mr-1' : 'ml-1'
+      }`}
+      style={{ 
+        width: '0.875em', 
+        height: '0.875em',
+        transform: 'translateZ(0)' 
+      }}
+    >
+      {icon}
+    </span>
+  );
 
   return (
     <span 
@@ -24,7 +47,9 @@ export function Badge({ children, variant = 'primary', className = '' }: BadgePr
         ${className}
       `}
     >
+      {icon && iconPosition === 'left' && iconElement}
       {children}
+      {icon && iconPosition === 'right' && iconElement}
     </span>
   );
 }
