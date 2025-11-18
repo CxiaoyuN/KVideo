@@ -43,7 +43,7 @@ export function EpisodeList({ episodes, currentEpisode, onEpisodeClick }: Episod
   });
 
   return (
-    <Card hover={false} className="lg:sticky lg:top-32" style={{ transform: 'translateZ(0)' }}>
+    <Card hover={false} className="lg:sticky lg:top-32">
       <h3 className="text-lg sm:text-xl font-bold text-[var(--text-color)] mb-4 flex items-center gap-2">
         <Icons.List size={20} className="sm:w-6 sm:h-6" />
         <span>选集</span>

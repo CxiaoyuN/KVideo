@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo, memo } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Icons } from '@/components/ui/Icon';
-import { useKeyboardNavigation } from '@/lib/hooks/useKeyboardNavigation';
 
 interface Video {
   vod_id: string;
@@ -26,38 +25,7 @@ interface VideoGridProps {
 
 export function VideoGrid({ videos, className = '' }: VideoGridProps) {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
-  const [focusedIndex, setFocusedIndex] = useState(-1);
   const gridRef = useRef<HTMLDivElement>(null);
-  const videoRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-  
-  // Calculate columns for grid navigation
-  const getColumns = () => {
-    if (typeof window === 'undefined') return 6;
-    const width = window.innerWidth;
-    if (width >= 1536) return 6; // 2xl
-    if (width >= 1280) return 6; // xl
-    if (width >= 1024) return 5; // lg
-    if (width >= 768) return 4; // md
-    if (width >= 640) return 3; // sm
-    return 2; // default
-  };
-
-  // Keyboard navigation
-  useKeyboardNavigation({
-    enabled: true,
-    containerRef: gridRef,
-    currentIndex: focusedIndex,
-    itemCount: videos.length,
-    orientation: 'grid',
-    columns: getColumns(),
-    onNavigate: useCallback((index: number) => {
-      setFocusedIndex(index);
-      videoRefs.current[index]?.focus();
-    }, []),
-    onSelect: useCallback((index: number) => {
-      videoRefs.current[index]?.click();
-    }, []),
-  });
   
   if (videos.length === 0) {
     return null;
@@ -97,29 +65,17 @@ export function VideoGrid({ videos, className = '' }: VideoGridProps) {
         
         const cardId = `${video.vod_id}-${index}`;
         const isActive = activeCardId === cardId;
-        const isFocused = focusedIndex === index;
         
         return (
           <Link 
             key={cardId}
             href={videoUrl}
-            ref={(el) => { videoRefs.current[index] = el; }}
             onClick={(e) => handleCardClick(e, cardId, videoUrl)}
-            onFocus={() => setFocusedIndex(index)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleCardClick(e as any, cardId, videoUrl);
-              }
-            }}
             role="listitem"
-            tabIndex={0}
             aria-label={`${video.vod_name}${video.vod_remarks ? ` - ${video.vod_remarks}` : ''}`}
           >
             <Card
-              className={`p-0 overflow-hidden group cursor-pointer flex flex-col h-full ${video.isNew ? 'animate-scale-in' : ''} ${
-                isFocused ? 'ring-2 ring-[var(--accent-color)] ring-offset-2' : ''
-              }`}
+              className={`p-0 overflow-hidden group cursor-pointer flex flex-col h-full ${video.isNew ? 'animate-scale-in' : ''}`}
             >
               {/* Poster */}
               <div className="relative aspect-[2/3] bg-[color-mix(in_srgb,var(--glass-bg)_50%,transparent)] overflow-hidden rounded-[var(--radius-2xl)]">
@@ -127,8 +83,9 @@ export function VideoGrid({ videos, className = '' }: VideoGridProps) {
                   <img
                     src={video.vod_pic}
                     alt={video.vod_name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 will-change-transform rounded-[var(--radius-2xl)]"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 rounded-[var(--radius-2xl)]"
                     loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       e.currentTarget.src = '/placeholder-poster.svg';
                     }}
@@ -142,7 +99,7 @@ export function VideoGrid({ videos, className = '' }: VideoGridProps) {
                 {/* Source Badge - Top Left */}
                 {video.sourceName && (
                   <div className="absolute top-2 left-2 z-10">
-                    <Badge variant="primary" className="text-xs backdrop-blur-md bg-[var(--accent-color)]/90">
+                    <Badge variant="primary" className="text-xs bg-[var(--accent-color)]">
                       {video.sourceName}
                     </Badge>
                   </div>

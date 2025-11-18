@@ -86,9 +86,9 @@ function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Glass Navbar */}
-      <nav className="sticky top-0 z-50 pt-4 pb-2" style={{ transform: 'translateZ(0)' }}>
+      <nav className="sticky top-0 z-50 pt-4 pb-2">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] [-webkit-backdrop-filter:blur(25px)_saturate(180%)] border border-[var(--glass-border)] shadow-[var(--shadow-md)] px-6 py-4 transition-all duration-[var(--transition-fluid)] rounded-[var(--radius-2xl)]">
+          <div className="bg-[var(--glass-bg)] backdrop-blur-[12px] saturate-[120%] [-webkit-backdrop-filter:blur(12px)_saturate(120%)] border border-[var(--glass-border)] shadow-[var(--shadow-md)] px-6 py-4 rounded-[var(--radius-2xl)]">
             <div className="flex items-center justify-between">
               <Link 
                 href="/" 

@@ -10,14 +10,14 @@ interface CardProps {
 
 export function Card({ children, className = '', hover = true, onClick, style }: CardProps) {
   const hoverStyles = hover 
-    ? "hover:translate-y-[-5px] hover:scale-[1.02] hover:shadow-[0_8px_24px_var(--shadow-color)] cursor-pointer transition-all duration-[var(--transition-fluid)]" 
-    : "transition-all duration-[var(--transition-fluid)]";
+    ? "hover:translate-y-[-2px] hover:shadow-[0_8px_24px_var(--shadow-color)] cursor-pointer transition-transform duration-200 ease-out" 
+    : "";
 
   const baseClasses = `
     bg-[var(--glass-bg)]
-    backdrop-blur-[25px]
-    saturate-[180%]
-    [-webkit-backdrop-filter:blur(25px)_saturate(180%)]
+    backdrop-blur-[12px]
+    saturate-[120%]
+    [-webkit-backdrop-filter:blur(12px)_saturate(120%)]
     rounded-[var(--radius-2xl)]
     shadow-[0_2px_8px_var(--shadow-color)] md:shadow-[var(--shadow-md)]
     border

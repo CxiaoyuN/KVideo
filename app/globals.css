@@ -58,11 +58,10 @@ body {
   background-image: var(--bg-image);
   color: var(--text-color);
   font-family: var(--font-family-system);
-  transition: background 0.3s ease;
   
   /* Optimize scrolling performance */
-  will-change: scroll-position;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
 }
 
 body.dark,
@@ -88,8 +87,8 @@ body.dark,
 }
 
 html {
-  /* Enable smooth scrolling with performance optimization */
-  scroll-behavior: smooth;
+  /* Disable smooth scrolling for better performance - users expect instant scroll */
+  scroll-behavior: auto;
 }
 
 /* Global focus-visible styles for keyboard navigation accessibility */
@@ -310,20 +309,16 @@ select:focus-visible {
 /* Liquid Glass Components */
 .glass-card {
   background: var(--glass-bg);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--glass-border);
-  transition: transform var(--transition-fluid), box-shadow 0.2s ease;
-  
-  /* Use GPU acceleration for smooth animations */
-  will-change: transform;
-  transform: translateZ(0);
+  transition: transform 0.2s ease-out;
 }
 
 .glass-card:hover {
-  transform: translateY(-5px) scale(1.02) translateZ(0);
+  transform: translateY(-2px);
   box-shadow: 0 8px 24px var(--shadow-color);
 }
 
@@ -331,20 +326,18 @@ select:focus-visible {
 nav:where(.sticky, .fixed),
 .sticky,
 .fixed {
-  will-change: transform;
-  transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
 
 .glass-input {
   background: var(--glass-bg);
-  backdrop-filter: blur(10px) saturate(150%);
-  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-2xl);
   color: var(--text-color);
-  transition: all var(--transition-fluid);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .glass-input:focus {
@@ -530,6 +523,39 @@ nav:where(.sticky, .fixed),
 
 .animate-slide-up {
   animation: slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Performance optimizations for scrolling */
+/* Apply CSS containment to grid items for better scroll performance */
+[class*="grid"] > * {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+  contain: layout style paint;
+}
+
+/* Reduce paint complexity on scroll */
+img {
+  content-visibility: auto;
+}
+
+/* Disable pointer events during scroll for better performance */
+body.scrolling * {
+  pointer-events: none !important;
+}
+
+/* Force hardware acceleration for specific animated elements */
+.group:hover img,
+.glass-card,
+nav {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Optimize badge rendering */
+[class*="badge"],
+[class*="Badge"] {
+  contain: layout style;
 }
 
 

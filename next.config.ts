@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Performance optimizations
+  reactStrictMode: true,
+  poweredByHeader: false,
+  
+  // Compiler optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  
   images: {
     remotePatterns: [
       // Douban images
@@ -38,6 +47,9 @@ const nextConfig: NextConfig = {
         hostname: '**.cn',
       },
     ],
+    // Add image optimization for better performance
+    formats: ['image/webp'],
+    minimumCacheTTL: 60,
   },
 };
 
