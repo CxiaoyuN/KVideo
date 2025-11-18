@@ -116,11 +116,30 @@ export function useParallelSearch(
 
               console.log(`[useParallelSearch] Received ${newVideos.length} videos from source ${data.source}`);
 
-              // Add videos and sort by relevance
+              // Optimized: Insert new videos in sorted position instead of re-sorting entire array
               setResults((prev) => {
-                const combined = [...prev, ...newVideos];
-                // Sort by relevance score (highest first)
-                return combined.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+                if (prev.length === 0) return newVideos;
+                
+                // Binary insert for better performance
+                const combined = [...prev];
+                for (const video of newVideos) {
+                  const score = video.relevanceScore || 0;
+                  let insertIndex = combined.length;
+                  
+                  // Find insert position using binary search
+                  let left = 0;
+                  let right = combined.length;
+                  while (left < right) {
+                    const mid = Math.floor((left + right) / 2);
+                    if ((combined[mid].relevanceScore || 0) >= score) {
+                      left = mid + 1;
+                    } else {
+                      right = mid;
+                    }
+                  }
+                  combined.splice(left, 0, video);
+                }
+                return combined;
               });
 
               // Update source stats

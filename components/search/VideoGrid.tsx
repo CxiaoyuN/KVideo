@@ -23,7 +23,104 @@ interface VideoGridProps {
   className?: string;
 }
 
-export function VideoGrid({ videos, className = '' }: VideoGridProps) {
+// Memoized VideoCard component to prevent unnecessary re-renders
+const VideoCard = memo(({ 
+  video, 
+  videoUrl, 
+  cardId, 
+  isActive, 
+  onCardClick 
+}: { 
+  video: Video; 
+  videoUrl: string; 
+  cardId: string; 
+  isActive: boolean; 
+  onCardClick: (e: React.MouseEvent, cardId: string, videoUrl: string) => void;
+}) => {
+  return (
+    <Link 
+      key={cardId}
+      href={videoUrl}
+      onClick={(e) => onCardClick(e, cardId, videoUrl)}
+      role="listitem"
+      aria-label={`${video.vod_name}${video.vod_remarks ? ` - ${video.vod_remarks}` : ''}`}
+    >
+      <Card
+        className={`p-0 overflow-hidden group cursor-pointer flex flex-col h-full ${video.isNew ? 'animate-scale-in' : ''}`}
+      >
+        {/* Poster */}
+        <div className="relative aspect-[2/3] bg-[color-mix(in_srgb,var(--glass-bg)_50%,transparent)] overflow-hidden rounded-[var(--radius-2xl)]">
+          {video.vod_pic ? (
+            <img
+              src={video.vod_pic}
+              alt={video.vod_name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 rounded-[var(--radius-2xl)]"
+              loading="lazy"
+              decoding="async"
+              onError={(e) => {
+                e.currentTarget.src = '/placeholder-poster.svg';
+              }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Icons.Film size={64} className="text-[var(--text-color-secondary)]" />
+            </div>
+          )}
+          
+          {/* Source Badge - Top Left */}
+          {video.sourceName && (
+            <div className="absolute top-2 left-2 z-10">
+              <Badge variant="primary" className="text-xs bg-[var(--accent-color)]">
+                {video.sourceName}
+              </Badge>
+            </div>
+          )}
+          
+          {/* Overlay - Show on hover (desktop) or when active (mobile) */}
+          <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 ${
+            isActive ? 'opacity-100' : 'opacity-0 lg:group-hover:opacity-100'
+          }`}>
+            <div className="absolute bottom-0 left-0 right-0 p-3">
+              {/* Mobile indicator when active */}
+              {isActive && (
+                <div className="lg:hidden text-white/90 text-xs mb-2 font-medium">
+                  再次点击播放 →
+                </div>
+              )}
+              {video.type_name && (
+                <Badge variant="secondary" className="text-xs mb-2">
+                  {video.type_name}
+                </Badge>
+              )}
+              {video.vod_year && (
+                <div className="flex items-center gap-1 text-white/80 text-xs">
+                  <Icons.Calendar size={12} />
+                  <span>{video.vod_year}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Info - Fixed height section */}
+        <div className="p-3 flex-1 flex flex-col">
+          <h4 className="font-semibold text-sm text-[var(--text-color)] line-clamp-2 min-h-[2.5rem] group-hover:text-[var(--accent-color)] transition-colors">
+            {video.vod_name}
+          </h4>
+          {video.vod_remarks && (
+            <p className="text-xs text-[var(--text-color-secondary)] mt-1 line-clamp-1">
+              {video.vod_remarks}
+            </p>
+          )}
+        </div>
+      </Card>
+    </Link>
+  );
+});
+
+VideoCard.displayName = 'VideoCard';
+
+export const VideoGrid = memo(function VideoGrid({ videos, className = '' }: VideoGridProps) {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   
@@ -67,85 +164,16 @@ export function VideoGrid({ videos, className = '' }: VideoGridProps) {
         const isActive = activeCardId === cardId;
         
         return (
-          <Link 
+          <VideoCard
             key={cardId}
-            href={videoUrl}
-            onClick={(e) => handleCardClick(e, cardId, videoUrl)}
-            role="listitem"
-            aria-label={`${video.vod_name}${video.vod_remarks ? ` - ${video.vod_remarks}` : ''}`}
-          >
-            <Card
-              className={`p-0 overflow-hidden group cursor-pointer flex flex-col h-full ${video.isNew ? 'animate-scale-in' : ''}`}
-            >
-              {/* Poster */}
-              <div className="relative aspect-[2/3] bg-[color-mix(in_srgb,var(--glass-bg)_50%,transparent)] overflow-hidden rounded-[var(--radius-2xl)]">
-                {video.vod_pic ? (
-                  <img
-                    src={video.vod_pic}
-                    alt={video.vod_name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 rounded-[var(--radius-2xl)]"
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder-poster.svg';
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Icons.Film size={64} className="text-[var(--text-color-secondary)]" />
-                  </div>
-                )}
-                
-                {/* Source Badge - Top Left */}
-                {video.sourceName && (
-                  <div className="absolute top-2 left-2 z-10">
-                    <Badge variant="primary" className="text-xs bg-[var(--accent-color)]">
-                      {video.sourceName}
-                    </Badge>
-                  </div>
-                )}
-                
-                {/* Overlay - Show on hover (desktop) or when active (mobile) */}
-                <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 ${
-                  isActive ? 'opacity-100' : 'opacity-0 lg:group-hover:opacity-100'
-                }`}>
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    {/* Mobile indicator when active */}
-                    {isActive && (
-                      <div className="lg:hidden text-white/90 text-xs mb-2 font-medium">
-                        再次点击播放 →
-                      </div>
-                    )}
-                    {video.type_name && (
-                      <Badge variant="secondary" className="text-xs mb-2">
-                        {video.type_name}
-                      </Badge>
-                    )}
-                    {video.vod_year && (
-                      <div className="flex items-center gap-1 text-white/80 text-xs">
-                        <Icons.Calendar size={12} />
-                        <span>{video.vod_year}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Info - Fixed height section */}
-              <div className="p-3 flex-1 flex flex-col">
-                <h4 className="font-semibold text-sm text-[var(--text-color)] line-clamp-2 min-h-[2.5rem] group-hover:text-[var(--accent-color)] transition-colors">
-                  {video.vod_name}
-                </h4>
-                {video.vod_remarks && (
-                  <p className="text-xs text-[var(--text-color-secondary)] mt-1 line-clamp-1">
-                    {video.vod_remarks}
-                  </p>
-                )}
-              </div>
-            </Card>
-          </Link>
+            video={video}
+            videoUrl={videoUrl}
+            cardId={cardId}
+            isActive={isActive}
+            onCardClick={handleCardClick}
+          />
         );
       })}
     </div>
   );
-}
+});

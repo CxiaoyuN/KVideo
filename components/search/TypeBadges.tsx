@@ -7,6 +7,7 @@
 
 'use client';
 
+import { memo } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Icons } from '@/components/ui/Icon';
 import { TypeBadgeList } from './TypeBadgeList';
@@ -23,7 +24,7 @@ interface TypeBadgesProps {
   className?: string;
 }
 
-export function TypeBadges({ 
+export const TypeBadges = memo(function TypeBadges({ 
   badges, 
   selectedTypes,
   onToggleType,
@@ -71,4 +72,4 @@ export function TypeBadges({
       )}
     </Card>
   );
-}
+});

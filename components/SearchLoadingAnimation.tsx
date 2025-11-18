@@ -25,7 +25,7 @@ export function SearchLoadingAnimation({
   const progress = totalSources > 0 ? (checkedSources / totalSources) * 100 : 0;
   const isComplete = progress >= 100;
 
-  // Animation pause/resume logic
+  // Animation pause/resume logic - Optimized interval
   useEffect(() => {
     if (isPaused || isComplete) {
       if (dotIntervalRef.current) {
@@ -37,7 +37,7 @@ export function SearchLoadingAnimation({
 
     dotIntervalRef.current = setInterval(() => {
       setDots((prev) => (prev.length >= 3 ? '' : prev + '.'));
-    }, 500);
+    }, 600); // Increased from 500ms to 600ms for better performance
 
     return () => {
       if (dotIntervalRef.current) {
@@ -90,10 +90,9 @@ export function SearchLoadingAnimation({
           className="h-1 bg-[color-mix(in_srgb,var(--glass-bg)_50%,transparent)] overflow-hidden rounded-[var(--radius-full)]"
         >
           <div
-            className="h-full bg-[var(--accent-color)] transition-all duration-500 ease-out relative will-change-transform rounded-[var(--radius-full)]"
+            className="h-full bg-[var(--accent-color)] transition-all duration-500 ease-out relative rounded-[var(--radius-full)]"
             style={{ 
-              width: `${progress}%`,
-              transform: 'translateZ(0)'
+              width: `${progress}%`
             }}
           >
             {/* Shimmer Effect - Optimized for GPU with contain for better performance */}

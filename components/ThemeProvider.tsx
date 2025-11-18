@@ -15,8 +15,11 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('system');
   const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('dark');
+  const [mounted, setMounted] = useState(false);
+  const transitionRef = React.useRef<any>(null);
 
   useEffect(() => {
+    setMounted(true);
     // Load saved theme
     const saved = localStorage.getItem('theme') as Theme;
     if (saved) {
@@ -25,6 +28,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!mounted) return;
+
     const applyTheme = (newTheme?: 'light' | 'dark') => {
       const themeToApply = newTheme || (theme === 'system' 
         ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -35,13 +40,43 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     };
 
     const applyThemeWithTransition = () => {
+      // Abort previous transition if it exists
+      if (transitionRef.current) {
+        try {
+          transitionRef.current.skipTransition();
+        } catch (e) {
+          // Ignore if transition already finished
+        }
+      }
+
+      // Check if document is visible - skip transition if hidden
+      if (document.hidden) {
+        applyTheme();
+        return;
+      }
+
       // Check if View Transition API is supported
       // @ts-ignore - View Transition API is experimental
       if (typeof document.startViewTransition === 'function') {
-        // @ts-ignore
-        document.startViewTransition(() => {
+        try {
+          // @ts-ignore
+          transitionRef.current = document.startViewTransition(() => {
+            applyTheme();
+          });
+          
+          // Clear ref after transition completes or fails
+          if (transitionRef.current) {
+            transitionRef.current.finished
+              .then(() => { transitionRef.current = null; })
+              .catch((error: Error) => { 
+                // Silently handle transition errors (visibility changes, etc.)
+                transitionRef.current = null;
+              });
+          }
+        } catch (error) {
+          // Fallback if transition fails to start
           applyTheme();
-        });
+        }
       } else {
         // Fallback for browsers that don't support View Transition API
         applyTheme();
@@ -59,9 +94,34 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       }
     };
     
+    // Listen for visibility changes to abort transitions
+    const handleVisibilityChange = () => {
+      if (document.hidden && transitionRef.current) {
+        try {
+          transitionRef.current.skipTransition();
+        } catch (e) {
+          // Ignore
+        }
+        transitionRef.current = null;
+      }
+    };
+    
     mediaQuery.addEventListener('change', handleSystemThemeChange);
-    return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
-  }, [theme]);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', handleSystemThemeChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // Abort any pending transition on unmount
+      if (transitionRef.current) {
+        try {
+          transitionRef.current.skipTransition();
+        } catch (e) {
+          // Ignore
+        }
+      }
+    };
+  }, [theme, mounted]);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, actualTheme }}>

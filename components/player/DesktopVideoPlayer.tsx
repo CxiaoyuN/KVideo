@@ -94,23 +94,21 @@ export function DesktopVideoPlayer({
 
   // Handle mouse movement to show controls (throttled for performance)
   const handleMouseMove = () => {
-    // Throttle mouse move events to improve performance
+    // Throttle mouse move events to improve performance (200ms instead of 100ms)
     if (mouseMoveThrottleRef.current) return;
     
     mouseMoveThrottleRef.current = setTimeout(() => {
       mouseMoveThrottleRef.current = null;
-    }, 100); // Throttle to max 10 times per second
+    }, 200); // Increased from 100ms to 200ms
     
-    setShowControls(true);
-    if (controlsTimeoutRef.current) {
-      clearTimeout(controlsTimeoutRef.current);
+    if (!showControls) {
+      setShowControls(true);
     }
-    if (isPlaying && !showSpeedMenu) {
+    if (isPlaying && controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
       controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
     }
-  };
-
-  // Play/Pause toggle
+  };  // Play/Pause toggle
   const togglePlay = () => {
     if (!videoRef.current) return;
     

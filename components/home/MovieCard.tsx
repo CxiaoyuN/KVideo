@@ -3,6 +3,7 @@
  * Displays movie poster, title, and rating
  */
 
+import { memo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
@@ -21,7 +22,7 @@ interface MovieCardProps {
   onMovieClick: (movie: DoubanMovie) => void;
 }
 
-export function MovieCard({ movie, onMovieClick }: MovieCardProps) {
+export const MovieCard = memo(function MovieCard({ movie, onMovieClick }: MovieCardProps) {
   return (
     <Link
       href={`/?q=${encodeURIComponent(movie.title)}`}
@@ -72,4 +73,4 @@ export function MovieCard({ movie, onMovieClick }: MovieCardProps) {
       </Card>
     </Link>
   );
-}
+});

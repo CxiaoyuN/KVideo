@@ -34,7 +34,7 @@ export function useInfiniteScroll({
           onLoadMore(nextPage);
         }
       },
-      { threshold: 0.1, rootMargin: '400px' }
+      { threshold: 0.1, rootMargin: '200px' } // Reduced from 400px to 200px
     );
 
     prefetchObserver.observe(prefetchRef.current);
