@@ -40,9 +40,9 @@ const BadgeComponent = memo(function Badge({
     <span 
       className={`
         inline-flex items-center justify-center
-        px-2 py-0.5 md:px-3 md:py-1
+        px-1.5 py-0.5
         rounded-[var(--radius-full)]
-        text-[10px] md:text-xs font-semibold
+        text-[10px] font-semibold
         ${variants[variant]}
         ${className}
       `}

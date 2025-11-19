@@ -102,19 +102,17 @@ const VideoCard = memo(({
             </div>
           
             {/* Badge Container - Top, spans full width with proper spacing */}
-            <div className="absolute top-2 left-2 right-2 z-10 flex items-start justify-between gap-1">
+            <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between gap-1">
               {/* Source Badge - Left */}
               {video.sourceName && (
-                <Badge variant="primary" className="text-[10px] px-1.5 py-0.5 bg-[var(--accent-color)] flex-shrink-0 max-w-[50%] truncate">
+                <Badge variant="primary" className="bg-[var(--accent-color)] flex-shrink-0 max-w-[50%] truncate">
                   {video.sourceName}
                 </Badge>
               )}
               
               {/* Latency Badge - Right */}
               {video.latency !== undefined && (
-                <div className="flex-shrink-0">
-                  <LatencyBadge latency={video.latency} className="text-[10px] px-1.5 py-0.5" />
-                </div>
+                <LatencyBadge latency={video.latency} className="flex-shrink-0" />
               )}
             </div>
           
