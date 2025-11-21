@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Icons } from '@/components/ui/Icon';
 import { SourceBadgeItem } from './SourceBadgeItem';
 import { useKeyboardNavigation } from '@/lib/hooks/useKeyboardNavigation';
@@ -26,7 +26,9 @@ interface SourceBadgeListProps {
 export function SourceBadgeList({ sources, selectedSources, onToggleSource }: SourceBadgeListProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [hasOverflow, setHasOverflow] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const badgeContainerRef = useRef<HTMLDivElement>(null);
   const badgeRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Keyboard navigation
@@ -40,8 +42,8 @@ export function SourceBadgeList({ sources, selectedSources, onToggleSource }: So
       setFocusedIndex(index);
       badgeRefs.current[index]?.focus();
       // Scroll into view for mobile
-      badgeRefs.current[index]?.scrollIntoView({ 
-        behavior: 'smooth', 
+      badgeRefs.current[index]?.scrollIntoView({
+        behavior: 'smooth',
         block: 'nearest',
         inline: 'center',
       });
@@ -51,42 +53,61 @@ export function SourceBadgeList({ sources, selectedSources, onToggleSource }: So
     }, [sources, onToggleSource]),
   });
 
+  // Check if content has overflow on mount and when sources change
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (badgeContainerRef.current) {
+        const maxHeight = 50; // 50px to fit one row (44px) + padding but hide second row (starts at 52px)
+        setHasOverflow(badgeContainerRef.current.scrollHeight > maxHeight);
+      }
+    };
+
+    checkOverflow();
+    // Recheck after a short delay to account for animations
+    const timeout = setTimeout(checkOverflow, 100);
+    return () => clearTimeout(timeout);
+  }, [sources]);
+
   return (
     <>
       {/* Desktop: Expandable Grid */}
-      <div 
+      <div
         ref={containerRef}
         className="hidden md:flex md:flex-col md:flex-1 -mx-1 px-1"
         role="group"
         aria-label="视频源筛选"
       >
-        <div className={`flex items-center gap-2 flex-wrap transition-all duration-300 ${
-          !isExpanded ? 'max-h-[3rem] overflow-hidden' : ''
-        }`}>
-          {sources.map((source, index) => (
-            <SourceBadgeItem
-              key={source.id}
-              id={source.id}
-              name={source.name}
-              count={source.count}
-              isSelected={selectedSources.has(source.id)}
-              onToggle={() => onToggleSource(source.id)}
-              isFocused={focusedIndex === index}
-              onFocus={() => setFocusedIndex(index)}
-              innerRef={(el: HTMLButtonElement | null) => { badgeRefs.current[index] = el; }}
-            />
-          ))}
+        <div className={`relative transition-all duration-300 z-10 ${!isExpanded ? 'max-h-[50px] overflow-hidden' : 'overflow-visible'
+          }`}>
+          <div
+            ref={badgeContainerRef}
+            className="flex items-center gap-2 flex-wrap p-1"
+          >
+            {sources.map((source, index) => (
+              <SourceBadgeItem
+                key={source.id}
+                id={source.id}
+                name={source.name}
+                count={source.count}
+                isSelected={selectedSources.has(source.id)}
+                onToggle={() => onToggleSource(source.id)}
+                isFocused={focusedIndex === index}
+                onFocus={() => setFocusedIndex(index)}
+                innerRef={(el: HTMLButtonElement | null) => { badgeRefs.current[index] = el; }}
+              />
+            ))}
+          </div>
         </div>
-        
-        {sources.length > 5 && (
+
+        {hasOverflow && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="mt-2 text-xs text-[var(--text-color-secondary)] hover:text-[var(--accent-color)] 
+            className="mt-2 text-xs text-[var(--text-color-secondary)] hover:text-[var(--accent-color)]
                      flex items-center gap-1 transition-colors self-start"
           >
             <span>{isExpanded ? '收起' : '展开更多'}</span>
-            <Icons.ChevronDown 
-              size={14} 
+            <Icons.ChevronDown
+              size={14}
               className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
             />
           </button>
@@ -94,12 +115,12 @@ export function SourceBadgeList({ sources, selectedSources, onToggleSource }: So
       </div>
 
       {/* Mobile & Tablet: Horizontal Scroll */}
-      <div 
+      <div
         className="flex md:hidden flex-1 -mx-1 px-1 overflow-hidden"
         role="group"
         aria-label="视频源筛选"
       >
-        <div 
+        <div
           ref={containerRef}
           className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory"
         >
