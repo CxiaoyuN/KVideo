@@ -46,8 +46,21 @@ export async function getVideoDetail(
 
         const videoData = data.list[0];
 
-        // Parse episodes from vod_play_url
-        const episodes = parseEpisodes(videoData.vod_play_url || '');
+        // Handle multiple sources (separated by $$$)
+        const playFrom = (videoData.vod_play_from || '').split('$$$');
+        const playUrls = (videoData.vod_play_url || '').split('$$$');
+
+        // Find the best source (prioritize m3u8)
+        let selectedIndex = 0;
+
+        // Try to find a source that contains 'm3u8' in its name or code
+        const m3u8Index = playFrom.findIndex(code => code.toLowerCase().includes('m3u8'));
+        if (m3u8Index !== -1 && m3u8Index < playUrls.length) {
+            selectedIndex = m3u8Index;
+        }
+
+        // Parse episodes from the selected source
+        const episodes = parseEpisodes(playUrls[selectedIndex] || '');
 
         return {
             vod_id: videoData.vod_id,
@@ -62,7 +75,7 @@ export async function getVideoDetail(
             type_name: videoData.type_name,
             episodes,
             source: source.id,
-            source_code: videoData.vod_play_from || '',
+            source_code: playFrom[selectedIndex] || '',
         };
     } catch (error) {
         console.error(`Detail fetch failed for source ${source.name}:`, error);
