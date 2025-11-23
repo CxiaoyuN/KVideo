@@ -28,17 +28,9 @@ export async function parseHLSManifest(src: string): Promise<Segment[]> {
             const durationStr = trimmed.substring(8).split(',')[0];
             currentSegmentDuration = parseFloat(durationStr);
         } else if (trimmed && !trimmed.startsWith('#')) {
-            // Detect if the line is already an absolute URL (from proxy route)
-            // If so, use it directly without parsing
-            let segmentUrl: string;
-            if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
-                // Already absolute URL or absolute path - use as is
-                segmentUrl = trimmed;
-            } else {
-                // Relative URL - resolve against manifest URL
-                segmentUrl = new URL(trimmed, src).toString();
-            }
-
+            // Use URL API to resolve relative paths correctly against the manifest URL
+            // This handles cases where baseUrl might end with / and segment starts with /
+            const segmentUrl = new URL(trimmed, src).toString();
             segments.push({
                 url: segmentUrl,
                 duration: currentSegmentDuration,

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Use Edge Runtime for better geographic distribution
 export const runtime = 'edge';
 
 export async function GET(request: NextRequest) {
@@ -13,46 +12,15 @@ export async function GET(request: NextRequest) {
     try {
         // Beijing IP address to simulate request from China
         const chinaIP = '202.108.22.5';
-        const urlObj = new URL(url);
 
         const response = await fetch(url, {
             headers: {
-                // User agent
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-
-                // IP-related headers (multiple formats for better compatibility)
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'X-Forwarded-For': chinaIP,
-                'X-Real-IP': chinaIP,
                 'Client-IP': chinaIP,
-                'True-Client-IP': chinaIP,
-
-                // Geographic/location headers
-                'CF-IPCountry': 'CN',  // Cloudflare-style country code
-                'X-Country-Code': 'CN',
-                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-
-                // Standard browser headers
-                'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache',
-
-                // Referrer headers
-                'Referer': urlObj.origin,
-                'Origin': urlObj.origin,
-
-                // Connection
-                'Connection': 'keep-alive',
+                'Referer': new URL(url).origin,
             },
         });
-
-        // Log response status to help debug on Vercel
-        console.log(`Proxy request to ${url} - Status: ${response.status} ${response.statusText}`);
-
-        // Log warning for non-successful responses
-        if (!response.ok) {
-            console.warn(`Non-OK response: ${response.status} for URL: ${url}`);
-        }
 
         const contentType = response.headers.get('Content-Type');
 
@@ -104,28 +72,7 @@ export async function GET(request: NextRequest) {
         return newResponse;
     } catch (error) {
         console.error('Proxy error:', error);
-        console.error('Failed URL:', url);
-
-        // Log detailed error information to help debug on Vercel
-        if (error instanceof Error) {
-            console.error('Error message:', error.message);
-            console.error('Error stack:', error.stack);
-        }
-
-        return new NextResponse(
-            JSON.stringify({
-                error: 'Proxy request failed',
-                message: error instanceof Error ? error.message : 'Unknown error',
-                url: url
-            }),
-            {
-                status: 500,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*',
-                }
-            }
-        );
+        return new NextResponse('Proxy failed', { status: 500 });
     }
 }
 

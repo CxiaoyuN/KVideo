@@ -1,4 +1,4 @@
-const CACHE_NAME = 'video-cache-v2';
+const CACHE_NAME = 'video-cache-v1';
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
@@ -20,11 +20,6 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
-
-    // Skip proxy API routes - they handle their own caching and URL rewriting
-    if (url.pathname.startsWith('/api/proxy')) {
-        return; // Let the request pass through without Service Worker intervention
-    }
 
     // Intercept HLS manifest files (.m3u8)
     if (url.pathname.endsWith('.m3u8')) {
