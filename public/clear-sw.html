@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Service Worker</title>
+</head>
+<body>
+    <h1>清除 Service Worker</h1>
+    <button id="clearBtn">点击清除所有 Service Workers 和缓存</button>
+    <div id="status"></div>
+
+    <script>
+        document.getElementById('clearBtn').addEventListener('click', async () => {
+            const status = document.getElementById('status');
+            
+            try {
+                // Unregister all service workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (const registration of registrations) {
+                        await registration.unregister();
+                    }
+                    status.innerHTML += '<p>✅ Service Workers 已注销</p>';
+                }
+
+                // Clear all caches
+                if ('caches' in window) {
+                    const names = await caches.keys();
+                    await Promise.all(names.map(name => caches.delete(name)));
+                    status.innerHTML += '<p>✅ 所有缓存已清除</p>';
+                }
+
+                status.innerHTML += '<p><strong>完成！请刷新页面。</strong></p>';
+            } catch (error) {
+                status.innerHTML += `<p>❌ 错误: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
