@@ -16,9 +16,11 @@ export function parseEpisodes(playUrl: string): Episode[] {
 
         return episodes.map((episode, index) => {
             const [name, url] = episode.split('$');
+            // Clean up URL: remove double slashes but keep protocol (http:// or https://)
+            const cleanUrl = (url || '').replace(/([^:])\/\//g, '$1/');
             return {
                 name: name || `Episode ${index + 1}`,
-                url: url || '',
+                url: cleanUrl,
                 index,
             };
         });

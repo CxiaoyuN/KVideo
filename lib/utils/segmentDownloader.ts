@@ -14,7 +14,7 @@ interface DownloadQueueOptions {
     videoUrl?: string; // The m3u8 URL for metadata tracking
 }
 
-const CONCURRENCY = 1000;
+const CONCURRENCY = 5;
 const TIMEOUT_MS = 15000;
 const CACHE_NAME = 'video-cache-v1';
 
