@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Icons } from '@/components/ui/icons';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Icons } from '@/components/ui/Icon';
 import { cacheManager, type CacheStats } from '@/lib/utils/cacheManager';
 
 export function CacheSettings() {
@@ -17,16 +17,12 @@ export function CacheSettings() {
 
     useEffect(() => {
         loadStats();
-        // Refresh stats every 10 seconds
         const interval = setInterval(loadStats, 10000);
         return () => clearInterval(interval);
     }, []);
 
     const handleClearAll = async () => {
-        if (!confirm('确定要清除所有缓存吗？这将删除所有已下载的视频片段。')) {
-            return;
-        }
-
+        if (!confirm('确定要清除所有缓存吗？这将删除所有已下载的视频片段。')) return;
         setLoading(true);
         try {
             await cacheManager.clearAllCache();
@@ -53,16 +49,17 @@ export function CacheSettings() {
 
     return (
         <Card className="glass-effect">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Icons.Database className="h-5 w-5" />
-                    缓存管理
-                </CardTitle>
-                <CardDescription>
-                    视频片段缓存自动管理，7天后过期，最大1GB
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <div className="space-y-4">
+                <div>
+                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-1">
+                        <Icons.Inbox className="h-5 w-5" />
+                        缓存管理
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                        视频片段缓存自动管理，7天后过期，最大1GB
+                    </p>
+                </div>
+
                 {stats && (
                     <div className="space-y-3">
                         <div className="grid grid-cols-2 gap-4">
@@ -99,21 +96,11 @@ export function CacheSettings() {
                 )}
 
                 <div className="flex gap-2">
-                    <Button
-                        onClick={handleCleanup}
-                        disabled={loading}
-                        variant="outline"
-                        className="flex-1"
-                    >
-                        <Icons.Trash2 className="h-4 w-4 mr-2" />
+                    <Button onClick={handleCleanup} disabled={loading} className="flex-1">
+                        <Icons.Trash className="h-4 w-4 mr-2" />
                         清理过期缓存
                     </Button>
-                    <Button
-                        onClick={handleClearAll}
-                        disabled={loading}
-                        variant="outline"
-                        className="flex-1"
-                    >
+                    <Button onClick={handleClearAll} disabled={loading} className="flex-1">
                         <Icons.X className="h-4 w-4 mr-2" />
                         清除全部
                     </Button>
@@ -124,7 +111,7 @@ export function CacheSettings() {
                     <p>• 超过1GB时自动清理最旧的30%</p>
                     <p>• 系统每5分钟自动检查一次</p>
                 </div>
-            </CardContent>
+            </div>
         </Card>
     );
 }
