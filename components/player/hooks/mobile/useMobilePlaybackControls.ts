@@ -87,8 +87,9 @@ export function useMobilePlaybackControls({
     useEffect(() => {
         if (initialTime > 0 && videoRef.current) {
             // Only seek if we haven't progressed far (e.g. still near start)
-            // This prevents jumping if the user has already started watching
-            if (videoRef.current.currentTime < 2) {
+            // AND if the target time is significantly different from current time (> 0.5s)
+            // This prevents jumping if the user has already started watching and initialTime updates
+            if (videoRef.current.currentTime < 2 && Math.abs(videoRef.current.currentTime - initialTime) > 0.5) {
                 videoRef.current.currentTime = initialTime;
             }
         }
