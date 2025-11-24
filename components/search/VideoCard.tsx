@@ -60,6 +60,8 @@ export const VideoCard = memo<VideoCardProps>(({
                                 className="object-cover rounded-[var(--radius-2xl)]"
                                 sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw"
                                 loading="lazy"
+                                unoptimized
+                                referrerPolicy="no-referrer"
                                 onError={(e) => {
                                     const target = e.currentTarget as HTMLImageElement;
                                     target.style.opacity = '0';

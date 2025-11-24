@@ -123,7 +123,8 @@ export function usePlaybackControls({
         videoRef,
         isDraggingProgressRef,
         setCurrentTime,
-        setDuration
+        setDuration,
+        setIsPlaying
     });
 
     return {

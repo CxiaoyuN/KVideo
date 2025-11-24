@@ -45,6 +45,8 @@ export const MovieCard = memo(function MovieCard({ movie, onMovieClick }: MovieC
             className="object-cover transition-transform duration-300 group-hover:scale-105 rounded-[var(--radius-2xl)]"
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
             loading="lazy"
+            unoptimized
+            referrerPolicy="no-referrer"
             onError={(e) => {
               const target = e.currentTarget as HTMLImageElement;
               target.style.display = 'none';

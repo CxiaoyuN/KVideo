@@ -135,7 +135,8 @@ export function useMobilePlaybackControls({
         videoRef,
         isDraggingProgressRef,
         setCurrentTime,
-        setDuration
+        setDuration,
+        setIsPlaying
     });
 
     return {

@@ -73,6 +73,7 @@ export function DesktopVideoPlayer({
         className="w-full h-full object-contain"
         src={src}
         poster={poster}
+        x-webkit-airplay="allow"
         onPlay={handlePlay}
         onPause={handlePause}
         onTimeUpdate={handleTimeUpdateEvent}
