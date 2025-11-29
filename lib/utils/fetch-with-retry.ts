@@ -76,8 +76,16 @@ export async function fetchWithRetry({ url, request, headers = {} }: FetchWithRe
         }
     }
 
-    if (!response || !response.ok) {
-        throw new Error(`Failed after ${MAX_RETRIES} attempts: ${response?.status || lastError}`);
+    // If we got a response (even an error response like 403, 404), return it
+    // Only throw if we truly failed to get any response
+    if (!response) {
+        throw new Error(`Failed after ${MAX_RETRIES} attempts: ${lastError}`);
+    }
+
+    // Return the response even if it's an error status (403, 404, etc.)
+    // The caller can check response.ok or response.status
+    if (!response.ok) {
+        console.warn(`⚠ Returning non-OK response: ${response.status} ${response.statusText}`);
     }
 
     return response;

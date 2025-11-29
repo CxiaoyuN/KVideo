@@ -26,6 +26,19 @@ export async function GET(request: NextRequest) {
 
         const response = await fetchWithRetry({ url, request, headers: requestHeaders });
 
+        // If upstream returned an error, pass it through with CORS headers
+        if (!response.ok) {
+            const errorText = await response.text();
+            return new NextResponse(errorText || `Upstream error: ${response.status}`, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: {
+                    'Content-Type': response.headers.get('Content-Type') || 'text/plain',
+                    'Access-Control-Allow-Origin': '*',
+                },
+            });
+        }
+
         const contentType = response.headers.get('Content-Type');
 
         // Better M3U8 detection: check both content-type and actual content
