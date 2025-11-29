@@ -50,7 +50,7 @@ export function SearchHistoryDropdown({
     }
   }, [highlightedIndex]);
 
-  if (!isOpen) {
+  if (!isOpen || searchHistory.length === 0) {
     return null;
   }
 
@@ -65,31 +65,25 @@ export function SearchHistoryDropdown({
         e.preventDefault();
       }}
     >
-      {searchHistory.length === 0 ? (
-        <SearchHistoryEmptyState />
-      ) : (
-        <>
-          {/* Header with clear all button */}
-          <SearchHistoryHeader onClearAll={onClearAll} />
+      {/* Header with clear all button */}
+      <SearchHistoryHeader onClearAll={onClearAll} />
 
-          {/* Divider */}
-          <div className="search-history-divider" />
+      {/* Divider */}
+      <div className="search-history-divider" />
 
-          {/* History items */}
-          <div className="search-history-list">
-            {searchHistory.map((item, index) => (
-              <SearchHistoryListItem
-                key={`${item.query}-${item.timestamp}`}
-                item={item}
-                index={index}
-                isHighlighted={index === highlightedIndex}
-                onSelectItem={onSelectItem}
-                onRemoveItem={onRemoveItem}
-              />
-            ))}
-          </div>
-        </>
-      )}
+      {/* History items */}
+      <div className="search-history-list">
+        {searchHistory.map((item, index) => (
+          <SearchHistoryListItem
+            key={`${item.query}-${item.timestamp}`}
+            item={item}
+            index={index}
+            isHighlighted={index === highlightedIndex}
+            onSelectItem={onSelectItem}
+            onRemoveItem={onRemoveItem}
+          />
+        ))}
+      </div>
     </div>
   );
 }
