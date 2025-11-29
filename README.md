@@ -543,9 +543,23 @@ docker-compose up -d
 如果你不想自己构建镜像，可以直接从 Docker Hub 拉取：
 
 ```bash
+# 拉取最新版本
 docker pull kuekhaoyang/kvideo:latest
 docker run -d -p 3000:3000 --name kvideo kuekhaoyang/kvideo:latest
+
+# 或拉取特定版本
+docker pull kuekhaoyang/kvideo:1.0.0
+docker run -d -p 3000:3000 --name kvideo kuekhaoyang/kvideo:1.0.0
 ```
+
+> **✨ 多架构支持**：镜像支持 7 种平台架构，可在几乎所有设备上运行：
+> - `linux/amd64` - Intel/AMD 64位（大多数服务器、PC）
+> - `linux/arm64` - ARM 64位（Apple Silicon Mac、AWS Graviton、树莓派 4/5）
+> - `linux/arm/v7` - ARM 32位 v7（树莓派 2/3/4）
+> - `linux/arm/v6` - ARM 32位 v6（树莓派 1/Zero）
+> - `linux/386` - x86 32位（老旧 PC）
+> - `linux/ppc64le` - PowerPC 64位
+> - `linux/s390x` - IBM System z
 
 #### 4. 如何更新镜像
 
@@ -557,6 +571,8 @@ docker rm kvideo
 docker pull kuekhaoyang/kvideo:latest
 docker run -d -p 3000:3000 --name kvideo kuekhaoyang/kvideo:latest
 ```
+
+> **🔄 自动化部署**：本项目使用 GitHub Actions 自动构建和发布 Docker 镜像。每次代码推送到 main 分支时，会自动构建多架构镜像并推送到 Docker Hub，版本号从 `package.json` 读取。
 
 ## 🤝 贡献
 
