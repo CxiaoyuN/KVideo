@@ -549,10 +549,7 @@ docker-compose up -d
 如果你不想自己构建镜像，可以直接从 Docker Hub 拉取：
 
 ```bash
-# 拉取镜像
 docker pull kuekhaoyang/kvideo:latest
-
-# 运行容器
 docker run -d -p 3000:3000 --name kvideo kuekhaoyang/kvideo:latest
 ```
 
@@ -561,14 +558,9 @@ docker run -d -p 3000:3000 --name kvideo kuekhaoyang/kvideo:latest
 当有新版本发布时，可以通过以下命令更新：
 
 ```bash
-# 1. 停止并删除旧容器
 docker stop kvideo
 docker rm kvideo
-
-# 2. 拉取最新镜像
 docker pull kuekhaoyang/kvideo:latest
-
-# 3. 重新运行容器
 docker run -d -p 3000:3000 --name kvideo kuekhaoyang/kvideo:latest
 ```
 
