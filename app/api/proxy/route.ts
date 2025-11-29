@@ -15,9 +15,9 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Extract headers to forward (Cookies, Accept-Language, Range, etc.)
+        // Extract headers to forward (only essential ones)
         const requestHeaders: Record<string, string> = {};
-        const forwardHeaders = ['cookie', 'accept', 'accept-language', 'range'];
+        const forwardHeaders = ['cookie', 'range'];
 
         forwardHeaders.forEach(key => {
             const value = request.headers.get(key);

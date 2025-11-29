@@ -39,11 +39,12 @@ export async function fetchWithRetry({ url, request, headers = {} }: FetchWithRe
 
             response = await fetch(url, {
                 headers: {
+                    ...headers, // First: forwarded headers (Cookie, Accept, Range)
+                    // Then override with anti-blocking headers (these take precedence)
                     'User-Agent': randomUA,
                     'X-Forwarded-For': forwardedIP,
                     'Client-IP': forwardedIP,
                     'Referer': referer,
-                    ...headers, // Merge custom headers (Cookie, Accept, etc.)
                 },
                 signal: controller.signal,
             });
