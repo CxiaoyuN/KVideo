@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Icons } from '@/components/ui/Icon';
 import { useHistoryStore } from '@/lib/store/history-store';
 import { CustomVideoPlayer } from './CustomVideoPlayer';
+import { VideoPlayerError } from './VideoPlayerError';
+import { VideoPlayerEmpty } from './VideoPlayerEmpty';
 
 interface VideoPlayerProps {
   playUrl: string;
@@ -111,53 +111,19 @@ export function VideoPlayer({ playUrl, videoId, currentEpisode, onBack }: VideoP
     : playUrl;
 
   if (!playUrl) {
-    return (
-      <Card hover={false} className="p-0 overflow-hidden">
-        <div className="aspect-video bg-[var(--glass-bg)] backdrop-blur-[25px] saturate-[180%] rounded-[var(--radius-2xl)] flex items-center justify-center border border-[var(--glass-border)]">
-          <div className="text-center text-[var(--text-secondary)]">
-            <Icons.TV size={64} className="text-[var(--text-color-secondary)] mx-auto mb-4" />
-            <p>暂无播放源</p>
-          </div>
-        </div>
-      </Card>
-    );
+    return <VideoPlayerEmpty />;
   }
 
   return (
     <Card hover={false} className="p-0 overflow-hidden">
       {videoError ? (
-        <div className="aspect-video bg-black rounded-[var(--radius-2xl)] flex items-center justify-center">
-          <div
-            className="text-center text-white max-w-md px-4"
-            role="alert"
-            aria-live="assertive"
-            aria-atomic="true"
-          >
-            <Icons.AlertTriangle size={48} className="mx-auto mb-4 text-red-500" />
-            <p className="text-lg font-semibold mb-2">播放失败</p>
-            <p className="text-sm text-gray-300 mb-4">{videoError}</p>
-            <div className="flex gap-2 justify-center flex-wrap">
-              <Button
-                variant="secondary"
-                onClick={onBack}
-                className="flex items-center gap-2"
-              >
-                <Icons.ChevronLeft size={16} />
-                <span>返回</span>
-              </Button>
-              {retryCount < MAX_MANUAL_RETRIES && (
-                <Button
-                  variant="primary"
-                  onClick={handleRetry}
-                  className="flex items-center gap-2"
-                >
-                  <Icons.RefreshCw size={16} />
-                  <span>重试 ({retryCount}/{MAX_MANUAL_RETRIES})</span>
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+        <VideoPlayerError
+          error={videoError}
+          onBack={onBack}
+          onRetry={handleRetry}
+          retryCount={retryCount}
+          maxRetries={MAX_MANUAL_RETRIES}
+        />
       ) : (
         <CustomVideoPlayer
           key={`${useProxy ? 'proxy' : 'direct'}-${retryCount}`} // Force remount when switching modes or retrying

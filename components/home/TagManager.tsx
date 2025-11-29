@@ -1,24 +1,8 @@
-'use client';
-
-import { useEffect, useRef, useState } from 'react';
 import { Icons } from '@/components/ui/Icon';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  DragStartEvent,
-  DragOverlay,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { SortableTag, Tag } from './SortableTag';
+import { DragEndEvent } from '@dnd-kit/core';
+import { TagInput } from './TagInput';
+import { TagList } from './TagList';
+import { Tag } from './SortableTag';
 
 interface TagManagerProps {
   tags: Tag[];
@@ -51,42 +35,6 @@ export function TagManager({
   onDragEnd,
   onJustAddedTagHandled,
 }: TagManagerProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [activeId, setActiveId] = useState<string | null>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  // Auto-scroll to end when new tag is added
-  useEffect(() => {
-    if (justAddedTag && scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
-        left: scrollContainerRef.current.scrollWidth,
-        behavior: 'smooth',
-      });
-      onJustAddedTagHandled();
-    }
-  }, [justAddedTag, onJustAddedTagHandled]);
-
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    setActiveId(null);
-    onDragEnd(event);
-  };
-
-  const activeTag = tags.find((t) => t.id === activeId);
-
   return (
     <>
       {/* Management Controls */}
@@ -111,62 +59,24 @@ export function TagManager({
 
       {/* Add Custom Tag */}
       {showTagManager && (
-        <div className="mb-6 flex gap-2">
-          <input
-            type="text"
-            value={newTagInput}
-            onChange={(e) => onNewTagInputChange(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && onAddTag()}
-            placeholder="添加自定义标签..."
-            className="flex-1 bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] text-[var(--text-color)] px-4 py-2 focus:outline-none focus:border-[var(--accent-color)] transition-colors rounded-[var(--radius-2xl)]"
-          />
-          <button
-            onClick={onAddTag}
-            className="px-6 py-2 bg-[var(--accent-color)] text-white font-semibold hover:opacity-90 transition-opacity rounded-[var(--radius-2xl)] cursor-pointer"
-          >
-            添加
-          </button>
-        </div>
+        <TagInput
+          newTagInput={newTagInput}
+          onNewTagInputChange={onNewTagInputChange}
+          onAddTag={onAddTag}
+        />
       )}
 
       {/* Tag Filter */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <div
-          ref={scrollContainerRef}
-          className="mb-8 flex items-center gap-3 overflow-x-auto pb-3 pt-2 px-1 scrollbar-hide"
-        >
-          <SortableContext
-            items={tags.map(t => t.id)}
-            strategy={horizontalListSortingStrategy}
-          >
-            {tags.map((tag) => (
-              <SortableTag
-                key={tag.id}
-                tag={tag}
-                selectedTag={selectedTag}
-                showTagManager={showTagManager}
-                onTagSelect={onTagSelect}
-                onTagDelete={onTagDelete}
-              />
-            ))}
-          </SortableContext>
-        </div>
-
-        <DragOverlay>
-          {activeId && activeTag ? (
-            <div className="relative flex-shrink-0 animate-jiggle">
-              <button className="px-6 py-2.5 text-sm font-semibold whitespace-nowrap rounded-[var(--radius-full)] bg-[var(--accent-color)] text-white shadow-xl scale-110 cursor-grabbing border border-transparent">
-                {activeTag.label}
-              </button>
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+      <TagList
+        tags={tags}
+        selectedTag={selectedTag}
+        showTagManager={showTagManager}
+        justAddedTag={justAddedTag}
+        onTagSelect={onTagSelect}
+        onTagDelete={onTagDelete}
+        onDragEnd={onDragEnd}
+        onJustAddedTagHandled={onJustAddedTagHandled}
+      />
     </>
   );
 }
