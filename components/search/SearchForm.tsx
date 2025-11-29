@@ -11,6 +11,7 @@ interface SearchFormProps {
   currentSource?: string;
   checkedSources?: number;
   totalSources?: number;
+  placeholder?: string;
 }
 
 export function SearchForm({
@@ -21,6 +22,7 @@ export function SearchForm({
   currentSource = '',
   checkedSources = 0,
   totalSources = 16,
+  placeholder,
 }: SearchFormProps) {
   return (
     <div className="max-w-3xl mx-auto">
@@ -28,6 +30,7 @@ export function SearchForm({
         onSearch={onSearch}
         onClear={onClear}
         initialQuery={initialQuery}
+        placeholder={placeholder}
       />
 
       {/* Loading Animation */}

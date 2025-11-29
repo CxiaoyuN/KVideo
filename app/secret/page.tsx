@@ -38,6 +38,7 @@ function SecretHomePage() {
                     currentSource=""
                     checkedSources={completedSources}
                     totalSources={totalSources}
+                    placeholder="输入关键词开始搜索..."
                 />
             </div>
 
@@ -57,10 +58,13 @@ function SecretHomePage() {
                     <NoResults onReset={handleReset} />
                 )}
 
-                {/* Empty State - Just show a dark placeholder or nothing for secret mode */}
+                {/* Empty State - Hidden mode information */}
                 {!loading && !hasSearched && (
-                    <div className="flex flex-col items-center justify-center py-20 text-[var(--text-color-secondary)]">
-                        <p>Secret Mode Active</p>
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                        <p className="text-lg text-[var(--text-color)] mb-2">隐藏模式已激活</p>
+                        <p className="text-sm text-[var(--text-color-secondary)]">
+                            搜索后将显示结果，搜索记录不会保存到首页历史
+                        </p>
                     </div>
                 )}
             </main>

@@ -10,9 +10,10 @@ interface SearchBoxProps {
     onSearch: (query: string) => void;
     onClear?: () => void;
     initialQuery?: string;
+    placeholder?: string;
 }
 
-export function SearchBox({ onSearch, onClear, initialQuery = '' }: SearchBoxProps) {
+export function SearchBox({ onSearch, onClear, initialQuery = '', placeholder = '搜索电影、电视剧、综艺...' }: SearchBoxProps) {
     const [query, setQuery] = useState(initialQuery);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -74,7 +75,7 @@ export function SearchBox({ onSearch, onClear, initialQuery = '' }: SearchBoxPro
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
                 onKeyDown={handleKeyDown}
-                placeholder="搜索电影、电视剧、综艺..."
+                placeholder={placeholder}
                 className="text-base sm:text-lg pr-28 sm:pr-36 md:pr-44 truncate"
                 aria-label="搜索视频内容"
                 aria-expanded={isDropdownOpen}
