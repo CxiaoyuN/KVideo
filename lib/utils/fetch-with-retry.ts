@@ -20,8 +20,10 @@ export async function fetchWithRetry({ url, request }: FetchWithRetryOptions): P
     // Optional IP forwarding (default: Beijing IP)
     const forwardedIP = request.nextUrl.searchParams.get('ip') || '202.108.22.5';
 
-    const MAX_RETRIES = 5;
-    const TIMEOUT_MS = 30000; // 30 seconds
+    // Vercel serverless functions have a 10s default timeout
+    const isVercel = process.env.VERCEL === '1';
+    const MAX_RETRIES = isVercel ? 2 : 5;
+    const TIMEOUT_MS = isVercel ? 8000 : 30000; // 8s for Vercel, 30s for others
     let lastError: unknown = null;
     let response: Response | null = null;
 

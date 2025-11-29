@@ -30,8 +30,14 @@ export function MobileVideoPlayer({
   const { refs, state } = useMobilePlayerState();
   const { currentTime } = state;
 
+  // Ensure src goes through proxy to avoid CORS/IP issues on Vercel
+  // But don't double-proxy if already proxied
+  const proxySrc = src.includes('/api/proxy')
+    ? src
+    : `${typeof window !== 'undefined' ? window.location.origin : ''}/api/proxy?url=${encodeURIComponent(src)}`;
+
   // Preload HLS segments
-  useHLSPreloader({ src, currentTime, videoRef: refs.videoRef, isLoading: state.isLoading });
+  useHLSPreloader({ src: proxySrc, currentTime, videoRef: refs.videoRef, isLoading: state.isLoading });
 
   const {
     videoRef,
@@ -54,7 +60,7 @@ export function MobileVideoPlayer({
   } = state;
 
   const logic = useMobilePlayerLogic({
-    src,
+    src: proxySrc,
     initialTime,
     shouldAutoPlay,
     onError,
@@ -98,7 +104,7 @@ export function MobileVideoPlayer({
       <video
         ref={videoRef}
         className="w-full h-full object-contain touch-none"
-        src={src}
+        src={proxySrc}
         poster={poster}
         onPlay={handlePlay}
         onPause={handlePause}
@@ -127,7 +133,7 @@ export function MobileVideoPlayer({
       />
 
       <MobileControlsWrapper
-        src={src}
+        src={proxySrc}
         state={state}
         logic={logic}
         refs={refs}

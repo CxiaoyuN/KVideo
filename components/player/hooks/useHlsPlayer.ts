@@ -20,6 +20,11 @@ export function useHlsPlayer({
         const video = videoRef.current;
         if (!video || !src) return;
 
+        // Ensure src goes through proxy to avoid CORS/IP issues on Vercel
+        const proxySrc = src.includes('/api/proxy')
+            ? src
+            : `${window.location.origin}/api/proxy?url=${encodeURIComponent(src)}`;
+
         // Cleanup previous HLS instance
         if (hlsRef.current) {
             hlsRef.current.destroy();
@@ -49,7 +54,7 @@ export function useHlsPlayer({
                 });
                 hlsRef.current = hls;
 
-                hls.loadSource(src);
+                hls.loadSource(proxySrc);
                 hls.attachMedia(video);
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -117,12 +122,12 @@ export function useHlsPlayer({
             } else {
                 console.log('[HLS] Using native HLS support');
                 // Native HLS support
-                video.src = src;
+                video.src = proxySrc;
             }
         } else if (isNativeHlsSupported) {
             // Fallback for environments where Hls.js is not supported but native is (e.g. iOS without MSE?)
             console.log('[HLS] Using native HLS support (Hls.js not supported)');
-            video.src = src;
+            video.src = proxySrc;
         } else {
             console.error('[HLS] HLS not supported in this browser');
         }
