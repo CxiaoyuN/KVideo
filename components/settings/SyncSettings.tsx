@@ -20,6 +20,24 @@ export function SyncSettings() {
     } = useSync();
 
     if (!isInitialized) {
+        if (error) {
+            return (
+                <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-[var(--radius-2xl)] shadow-[var(--shadow-sm)] p-6">
+                    <h2 className="text-xl font-semibold text-[var(--text-color)] mb-4 flex items-center gap-2">
+                        <Icons.Cloud size={24} />
+                        <span>云端同步 (Google Drive)</span>
+                    </h2>
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-[var(--radius-xl)] text-sm text-yellow-600 dark:text-yellow-400">
+                        <p className="font-medium mb-2">配置缺失</p>
+                        <p className="opacity-90">请在 .env.local 文件中添加 Google Client ID:</p>
+                        <code className="block mt-2 p-2 bg-black/10 dark:bg-white/10 rounded">
+                            NEXT_PUBLIC_GOOGLE_CLIENT_ID=你的客户端ID
+                        </code>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-[var(--radius-2xl)] shadow-[var(--shadow-sm)] p-6">
                 <div className="flex items-center gap-3">
