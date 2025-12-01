@@ -9,8 +9,6 @@ import { SourceSettings } from '@/components/settings/SourceSettings';
 import { SortSettings } from '@/components/settings/SortSettings';
 import { DataSettings } from '@/components/settings/DataSettings';
 import { SettingsHeader } from '@/components/settings/SettingsHeader';
-import { AccountSettings } from '@/components/settings/AccountSettings';
-import { SyncSettings } from '@/components/settings/SyncSettings';
 import { useSettingsPage } from './hooks/useSettingsPage';
 
 export default function SettingsPage() {
@@ -44,14 +42,6 @@ export default function SettingsPage() {
       <div className="container mx-auto px-4 py-8 max-w-4xl space-y-8">
         {/* Header */}
         <SettingsHeader />
-
-        {/* Account Settings */}
-        <Suspense fallback={<div className="p-6 rounded-[var(--radius-2xl)] bg-[var(--glass-bg)] border border-[var(--glass-border)] backdrop-blur-xl">加载中...</div>}>
-          <AccountSettings />
-        </Suspense>
-
-        {/* Google Drive Sync */}
-        <SyncSettings />
 
         {/* Source Management */}
         <SourceSettings
