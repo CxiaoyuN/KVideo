@@ -46,14 +46,26 @@ export function useHlsPlayer({
                     enableWorker: true,
                     lowLatencyMode: true,
                     startFragPrefetch: true, // Fetch first segment immediately while parsing manifest
-                    // Reduce buffering requirement for startup
-                    maxBufferLength: 30,
-                    backBufferLength: 30,
+                    // Aggressively reduce buffering requirement for startup
+                    maxBufferLength: 10,
+                    maxMaxBufferLength: 20,
+                    // Try to start playing as soon as we have enough data
+                    fragLoadingMaxRetry: 3,
+                    manifestLoadingMaxRetry: 3,
+                    levelLoadingMaxRetry: 3,
                 });
                 hlsRef.current = hls;
 
                 hls.loadSource(src);
                 hls.attachMedia(video);
+
+                hls.on(Hls.Events.FRAG_LOADED, (event, data) => {
+                    // Force play if we have the first segment and it's not playing yet
+                    // detailed: data.frag.sn is the sequence number
+                    if (autoPlay && video.paused && data.frag.start === 0) {
+                        video.play().catch(console.warn);
+                    }
+                });
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
 
