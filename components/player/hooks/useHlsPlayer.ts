@@ -45,6 +45,10 @@ export function useHlsPlayer({
                 hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: true,
+                    startFragPrefetch: true, // Fetch first segment immediately while parsing manifest
+                    // Reduce buffering requirement for startup
+                    maxBufferLength: 30,
+                    backBufferLength: 30,
                 });
                 hlsRef.current = hls;
 

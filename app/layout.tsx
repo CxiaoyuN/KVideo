@@ -4,7 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Analytics } from "@vercel/analytics/react";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
-import { HistoryDownloader } from "@/lib/hooks/useHistoryDownloader";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,7 +39,6 @@ export default function RootLayout({
           {children}
           <Analytics />
           <ServiceWorkerRegister />
-          <HistoryDownloader />
         </ThemeProvider>
 
         {/* ARIA Live Region for Screen Reader Announcements */}
