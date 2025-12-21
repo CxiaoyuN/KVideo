@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SourceSettings } from '@/components/settings/SourceSettings';
 import { SortSettings } from '@/components/settings/SortSettings';
 import { DataSettings } from '@/components/settings/DataSettings';
+import { PasswordSettings } from '@/components/settings/PasswordSettings';
 import { SettingsHeader } from '@/components/settings/SettingsHeader';
 import { useSettingsPage } from './hooks/useSettingsPage';
 
@@ -15,6 +16,8 @@ export default function SettingsPage() {
   const {
     sources,
     sortBy,
+    passwordAccess,
+    accessPasswords,
     isAddModalOpen,
     isExportModalOpen,
     isImportModalOpen,
@@ -28,6 +31,9 @@ export default function SettingsPage() {
     handleSourcesChange,
     handleAddSource,
     handleSortChange,
+    handlePasswordToggle,
+    handleAddPassword,
+    handleRemovePassword,
     handleExport,
     handleImport,
     handleRestoreDefaults,
@@ -42,6 +48,15 @@ export default function SettingsPage() {
       <div className="container mx-auto px-4 py-8 max-w-4xl space-y-8">
         {/* Header */}
         <SettingsHeader />
+
+        {/* Password Settings */}
+        <PasswordSettings
+          enabled={passwordAccess}
+          passwords={accessPasswords}
+          onToggle={handlePasswordToggle}
+          onAdd={handleAddPassword}
+          onRemove={handleRemovePassword}
+        />
 
         {/* Source Management */}
         <SourceSettings

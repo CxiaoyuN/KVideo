@@ -20,6 +20,8 @@ export interface AppSettings {
   sortBy: SortOption;
   searchHistory: boolean;
   watchHistory: boolean;
+  passwordAccess: boolean;
+  accessPasswords: string[];
 }
 
 import { exportSettings, importSettings, SEARCH_HISTORY_KEY, WATCH_HISTORY_KEY } from './settings-helpers';
@@ -36,6 +38,8 @@ export const settingsStore = {
         sortBy: 'default',
         searchHistory: true,
         watchHistory: true,
+        passwordAccess: false,
+        accessPasswords: [],
       };
     }
 
@@ -46,6 +50,8 @@ export const settingsStore = {
         sortBy: 'default',
         searchHistory: true,
         watchHistory: true,
+        passwordAccess: false,
+        accessPasswords: [],
       };
     }
 
@@ -57,6 +63,8 @@ export const settingsStore = {
         sortBy: parsed.sortBy || 'default',
         searchHistory: parsed.searchHistory !== undefined ? parsed.searchHistory : true,
         watchHistory: parsed.watchHistory !== undefined ? parsed.watchHistory : true,
+        passwordAccess: parsed.passwordAccess !== undefined ? parsed.passwordAccess : false,
+        accessPasswords: Array.isArray(parsed.accessPasswords) ? parsed.accessPasswords : [],
       };
     } catch {
       return {
@@ -64,6 +72,8 @@ export const settingsStore = {
         sortBy: 'default',
         searchHistory: true,
         watchHistory: true,
+        passwordAccess: false,
+        accessPasswords: [],
       };
     }
   },

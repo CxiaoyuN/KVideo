@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Analytics } from "@vercel/analytics/react";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { PasswordGate } from "@/components/PasswordGate";
 
 
 const geistSans = Geist({
@@ -36,7 +37,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ThemeProvider>
-          {children}
+          <PasswordGate>
+            {children}
+          </PasswordGate>
           <Analytics />
           <ServiceWorkerRegister />
         </ThemeProvider>

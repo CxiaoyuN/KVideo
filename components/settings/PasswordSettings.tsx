@@ -1,0 +1,124 @@
+'use client';
+
+import { useState } from 'react';
+import { SettingsSection } from './SettingsSection';
+import { Trash2, Plus, Eye, EyeOff } from 'lucide-react';
+
+interface PasswordSettingsProps {
+    enabled: boolean;
+    passwords: string[];
+    onToggle: (enabled: boolean) => void;
+    onAdd: (password: string) => void;
+    onRemove: (password: string) => void;
+}
+
+export function PasswordSettings({
+    enabled,
+    passwords,
+    onToggle,
+    onAdd,
+    onRemove,
+}: PasswordSettingsProps) {
+    const [newPassword, setNewPassword] = useState('');
+    const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+
+    const handleAdd = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newPassword) return;
+
+        if (passwords.includes(newPassword)) {
+            setError('密码已存在');
+            return;
+        }
+
+        onAdd(newPassword);
+        setNewPassword('');
+        setError('');
+    };
+
+    return (
+        <SettingsSection title="访问控制" description="为应用启用密码保护功能。">
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-[var(--text-color)]">
+                        启用密码访问
+                    </label>
+                    <label className="switch relative inline-flex items-center cursor-pointer h-[30px] w-[50px] shrink-0">
+                        <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={enabled}
+                            onChange={(e) => onToggle(e.target.checked)}
+                        />
+                        <div className={`switch-slider w-full h-full rounded-[var(--radius-full)] bg-[color-mix(in_srgb,var(--text-color)_20%,transparent)] peer-checked:bg-[var(--accent-color)] transition-colors duration-[0.4s] cubic-bezier(0.2,0.8,0.2,1) before:content-[''] before:absolute before:h-[26px] before:w-[26px] before:left-[2px] before:bottom-[2px] before:bg-white before:rounded-[var(--radius-full)] before:transition-transform before:duration-[0.4s] before:cubic-bezier(0.2,0.8,0.2,1) before:shadow-[0_1px_3px_rgba(0,0,0,0.2)] peer-checked:before:translate-x-[20px]`}></div>
+                    </label>
+                </div>
+
+                {enabled && (
+                    <div className="space-y-4 pt-4 border-t border-[var(--glass-border)] animate-in fade-in slide-in-from-top-2">
+                        <div className="space-y-2">
+                            <h4 className="text-sm font-medium text-[var(--text-color)]">已授权密码</h4>
+
+                            {passwords.length === 0 && (
+                                <p className="text-sm text-[var(--text-color-secondary)] italic">
+                                    未设置密码。在至少添加一个密码之前，任何人都可以访问。
+                                </p>
+                            )}
+
+                            <div className="flex flex-wrap gap-2">
+                                {passwords.map((pwd, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-center gap-2 px-3 py-1.5 bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-[var(--radius-full)] text-sm transition-all duration-300 hover:scale-105"
+                                    >
+                                        <span className="font-mono">{showPassword ? pwd : '••••••'}</span>
+                                        <button
+                                            onClick={() => onRemove(pwd)}
+                                            className="text-[var(--text-color-secondary)] hover:text-red-500 transition-colors"
+                                            title="删除密码"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleAdd} className="flex gap-2 items-start">
+                            <div className="flex-1 space-y-1">
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        value={newPassword}
+                                        onChange={(e) => {
+                                            setNewPassword(e.target.value);
+                                            setError('');
+                                        }}
+                                        placeholder="添加新密码..."
+                                        className="w-full px-4 py-2 pr-10 rounded-[var(--radius-2xl)] bg-[var(--glass-bg)] border border-[var(--glass-border)] focus:outline-none focus:border-[var(--accent-color)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent-color)_30%,transparent)] transition-all duration-[0.4s] cubic-bezier(0.2,0.8,0.2,1) text-sm"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-color-secondary)] hover:text-[var(--text-color)] transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+                                {error && <p className="text-xs text-red-500 pl-2">{error}</p>}
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={!newPassword}
+                                className="p-2 bg-[var(--accent-color)] text-white rounded-[var(--radius-2xl)] hover:translate-y-[-2px] hover:brightness-110 shadow-[var(--shadow-sm)] hover:shadow-[0_4px_8px_var(--shadow-color)] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all duration-200"
+                            >
+                                <Plus size={20} />
+                            </button>
+                        </form>
+                    </div>
+                )}
+            </div>
+        </SettingsSection>
+    );
+}

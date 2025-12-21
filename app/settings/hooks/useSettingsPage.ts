@@ -12,15 +12,27 @@ export function useSettingsPage() {
     const [isRestoreDefaultsDialogOpen, setIsRestoreDefaultsDialogOpen] = useState(false);
     const [editingSource, setEditingSource] = useState<VideoSource | null>(null);
 
+    const [passwordAccess, setPasswordAccess] = useState(false);
+    const [accessPasswords, setAccessPasswords] = useState<string[]>([]);
+
     useEffect(() => {
         const settings = settingsStore.getSettings();
         setSources(settings.sources || []);
         setSortBy(settings.sortBy);
+        setPasswordAccess(settings.passwordAccess);
+        setAccessPasswords(settings.accessPasswords);
     }, []);
 
     const handleSourcesChange = (newSources: VideoSource[]) => {
         setSources(newSources);
-        settingsStore.saveSettings({ sources: newSources, sortBy, searchHistory: true, watchHistory: true });
+        settingsStore.saveSettings({
+            sources: newSources,
+            sortBy,
+            searchHistory: true,
+            watchHistory: true,
+            passwordAccess,
+            accessPasswords
+        });
     };
 
     const handleAddSource = (source: VideoSource) => {
@@ -39,7 +51,52 @@ export function useSettingsPage() {
 
     const handleSortChange = (newSort: SortOption) => {
         setSortBy(newSort);
-        settingsStore.saveSettings({ sources, sortBy: newSort, searchHistory: true, watchHistory: true });
+        settingsStore.saveSettings({
+            sources,
+            sortBy: newSort,
+            searchHistory: true,
+            watchHistory: true,
+            passwordAccess,
+            accessPasswords
+        });
+    };
+
+    const handlePasswordToggle = (enabled: boolean) => {
+        setPasswordAccess(enabled);
+        settingsStore.saveSettings({
+            sources,
+            sortBy,
+            searchHistory: true,
+            watchHistory: true,
+            passwordAccess: enabled,
+            accessPasswords
+        });
+    };
+
+    const handleAddPassword = (password: string) => {
+        const updated = [...accessPasswords, password];
+        setAccessPasswords(updated);
+        settingsStore.saveSettings({
+            sources,
+            sortBy,
+            searchHistory: true,
+            watchHistory: true,
+            passwordAccess,
+            accessPasswords: updated
+        });
+    };
+
+    const handleRemovePassword = (password: string) => {
+        const updated = accessPasswords.filter(p => p !== password);
+        setAccessPasswords(updated);
+        settingsStore.saveSettings({
+            sources,
+            sortBy,
+            searchHistory: true,
+            watchHistory: true,
+            passwordAccess,
+            accessPasswords: updated
+        });
     };
 
     const handleExport = (includeSearchHistory: boolean, includeWatchHistory: boolean) => {
@@ -59,6 +116,8 @@ export function useSettingsPage() {
             const settings = settingsStore.getSettings();
             setSources(settings.sources);
             setSortBy(settings.sortBy);
+            setPasswordAccess(settings.passwordAccess);
+            setAccessPasswords(settings.accessPasswords);
         }
         return success;
     };
@@ -78,6 +137,8 @@ export function useSettingsPage() {
     return {
         sources,
         sortBy,
+        passwordAccess,
+        accessPasswords,
         isAddModalOpen,
         isExportModalOpen,
         isImportModalOpen,
@@ -92,6 +153,9 @@ export function useSettingsPage() {
         handleSourcesChange,
         handleAddSource,
         handleSortChange,
+        handlePasswordToggle,
+        handleAddPassword,
+        handleRemovePassword,
         handleExport,
         handleImport,
         handleRestoreDefaults,
