@@ -10,7 +10,6 @@ interface PasswordSettingsProps {
     onToggle: (enabled: boolean) => void;
     onAdd: (password: string) => void;
     onRemove: (password: string) => void;
-    envPasswordSet?: boolean;
 }
 
 export function PasswordSettings({
@@ -19,7 +18,6 @@ export function PasswordSettings({
     onToggle,
     onAdd,
     onRemove,
-    envPasswordSet,
 }: PasswordSettingsProps) {
     const [newPassword, setNewPassword] = useState('');
     const [error, setError] = useState('');
@@ -40,7 +38,7 @@ export function PasswordSettings({
     };
 
     return (
-        <SettingsSection title="本地访问控制 (本设备)" description="仅为此浏览器/设备启用密码保护。此设置不会同步，且不影响全局环境变量密码。">
+        <SettingsSection title="访问控制" description="为应用启用密码保护功能。">
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <label className="text-sm font-medium text-[var(--text-color)]">
@@ -69,17 +67,6 @@ export function PasswordSettings({
                             )}
 
                             <div className="flex flex-wrap gap-2">
-                                {envPasswordSet && (
-                                    <div
-                                        className="flex items-center gap-2 px-3 py-1.5 bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/30 rounded-[var(--radius-full)] text-sm shadow-[0_2px_4px_rgba(0,0,0,0.05)]"
-                                        title="这是通过环境变量设置的全局密码，不可在此删除。"
-                                    >
-                                        <span className="w-2 h-2 rounded-full bg-[var(--accent-color)] animate-pulse"></span>
-                                        <span className="font-semibold text-[var(--accent-color)]">全局密码</span>
-                                        <span className="font-mono">{showPassword ? 'ACCESS_PASSWORD' : '••••••'}</span>
-                                        <span className="text-[var(--text-color-secondary)] text-xs opacity-60">不可在此删除</span>
-                                    </div>
-                                )}
                                 {passwords.map((pwd, index) => (
                                     <div
                                         key={index}
@@ -89,7 +76,7 @@ export function PasswordSettings({
                                         <button
                                             onClick={() => onRemove(pwd)}
                                             className="text-[var(--text-color-secondary)] hover:text-red-500 transition-colors"
-                                            title="删除本地密码"
+                                            title="删除密码"
                                         >
                                             <Trash2 size={14} />
                                         </button>

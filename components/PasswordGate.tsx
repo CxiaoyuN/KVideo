@@ -3,14 +3,12 @@
 import { useState, useEffect } from 'react';
 import { settingsStore } from '@/lib/store/settings-store';
 import { Lock } from 'lucide-react';
-import { verifyEnvPassword, isEnvPasswordRequired } from '@/lib/actions/auth';
 
-const ACCESS_GRANTED_KEY = 'kvideo-access-granted';
+const SESSION_UNLOCKED_KEY = 'kvideo-unlocked';
 
 export function PasswordGate({ children }: { children: React.ReactNode }) {
     const [isLocked, setIsLocked] = useState(true);
     const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [isClient, setIsClient] = useState(false);
 
@@ -19,59 +17,38 @@ export function PasswordGate({ children }: { children: React.ReactNode }) {
         checkLockStatus();
     }, []);
 
-    const checkLockStatus = async () => {
-        const isAccessGranted = localStorage.getItem(ACCESS_GRANTED_KEY) === 'true';
-        if (isAccessGranted) {
+    const checkLockStatus = () => {
+        const settings = settingsStore.getSettings();
+        if (!settings.passwordAccess) {
             setIsLocked(false);
-            setLoading(false);
             return;
         }
 
-        const envRequired = await isEnvPasswordRequired();
-        const settings = settingsStore.getSettings();
-
-        if (!envRequired && !settings.passwordAccess) {
+        const isUnlocked = sessionStorage.getItem(SESSION_UNLOCKED_KEY) === 'true';
+        if (isUnlocked) {
             setIsLocked(false);
         } else {
             setIsLocked(true);
         }
-        setLoading(false);
     };
 
-    const handleUnlock = async (e: React.FormEvent) => {
+    const handleUnlock = (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-
-        // Check against ENV password first
-        const isEnvValid = await verifyEnvPassword(password);
-        if (isEnvValid) {
-            localStorage.setItem(ACCESS_GRANTED_KEY, 'true');
-            setIsLocked(false);
-            setError(false);
-            setLoading(false);
-            return;
-        }
-
-        // Check against local settings passwords
         const settings = settingsStore.getSettings();
         if (settings.accessPasswords.includes(password)) {
-            localStorage.setItem(ACCESS_GRANTED_KEY, 'true');
+            sessionStorage.setItem(SESSION_UNLOCKED_KEY, 'true');
             setIsLocked(false);
             setError(false);
-            setLoading(false);
-            return;
+        } else {
+            setError(true);
+            // Shake animation trigger
+            const form = document.getElementById('password-form');
+            form?.classList.add('animate-shake');
+            setTimeout(() => form?.classList.remove('animate-shake'), 500);
         }
-
-        // Invalid password
-        setError(true);
-        setLoading(false);
-        // Shake animation trigger
-        const form = document.getElementById('password-form');
-        form?.classList.add('animate-shake');
-        setTimeout(() => form?.classList.remove('animate-shake'), 500);
     };
 
-    if (!isClient || loading) return null; // Prevent hydration mismatch and show nothing while checking
+    if (!isClient) return null; // Prevent hydration mismatch
 
     if (!isLocked) {
         return <>{children}</>;
@@ -117,10 +94,9 @@ export function PasswordGate({ children }: { children: React.ReactNode }) {
 
                         <button
                             type="submit"
-                            disabled={loading}
-                            className="w-full py-3 px-4 bg-[var(--accent-color)] text-white font-bold rounded-[var(--radius-2xl)] hover:translate-y-[-2px] hover:brightness-110 shadow-[var(--shadow-sm)] hover:shadow-[0_4px_8px_var(--shadow-color)] active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
+                            className="w-full py-3 px-4 bg-[var(--accent-color)] text-white font-bold rounded-[var(--radius-2xl)] hover:translate-y-[-2px] hover:brightness-110 shadow-[var(--shadow-sm)] hover:shadow-[0_4px_8px_var(--shadow-color)] active:translate-y-0 active:scale-[0.98] transition-all duration-200"
                         >
-                            {loading ? '正在验证...' : '解锁访问'}
+                            解锁访问
                         </button>
                     </div>
                 </form>

@@ -41,7 +41,6 @@ export default function SettingsPage() {
     editingSource,
     handleEditSource,
     setEditingSource,
-    envPasswordSet,
   } = useSettingsPage();
 
   return (
@@ -57,7 +56,6 @@ export default function SettingsPage() {
           onToggle={handlePasswordToggle}
           onAdd={handleAddPassword}
           onRemove={handleRemovePassword}
-          envPasswordSet={envPasswordSet}
         />
 
         {/* Source Management */}

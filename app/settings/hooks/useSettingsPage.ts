@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { settingsStore, getDefaultSources, type SortOption } from '@/lib/store/settings-store';
 import type { VideoSource } from '@/lib/types';
-import { isEnvPasswordRequired } from '@/lib/actions/auth';
 
 export function useSettingsPage() {
     const [sources, setSources] = useState<VideoSource[]>([]);
@@ -15,7 +14,6 @@ export function useSettingsPage() {
 
     const [passwordAccess, setPasswordAccess] = useState(false);
     const [accessPasswords, setAccessPasswords] = useState<string[]>([]);
-    const [envPasswordSet, setEnvPasswordSet] = useState(false);
 
     useEffect(() => {
         const settings = settingsStore.getSettings();
@@ -23,8 +21,6 @@ export function useSettingsPage() {
         setSortBy(settings.sortBy);
         setPasswordAccess(settings.passwordAccess);
         setAccessPasswords(settings.accessPasswords);
-
-        isEnvPasswordRequired().then(setEnvPasswordSet);
     }, []);
 
     const handleSourcesChange = (newSources: VideoSource[]) => {
@@ -166,6 +162,5 @@ export function useSettingsPage() {
         handleResetAll,
         editingSource,
         handleEditSource,
-        envPasswordSet,
     };
 }
