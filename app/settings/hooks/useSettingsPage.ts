@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react';
 import { settingsStore, getDefaultSources, type SortOption } from '@/lib/store/settings-store';
-import type { VideoSource } from '@/lib/types';
+import type { VideoSource, SourceSubscription } from '@/lib/types';
+import {
+    type ImportResult,
+    mergeSources,
+    parseSourcesFromJson,
+    fetchSourcesFromUrl
+} from '@/lib/utils/source-import-utils';
 
 export function useSettingsPage() {
     const [sources, setSources] = useState<VideoSource[]>([]);
+    const [subscriptions, setSubscriptions] = useState<SourceSubscription[]>([]);
     const [sortBy, setSortBy] = useState<SortOption>('default');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -19,6 +26,7 @@ export function useSettingsPage() {
     useEffect(() => {
         const settings = settingsStore.getSettings();
         setSources(settings.sources || []);
+        setSubscriptions(settings.subscriptions || []);
         setSortBy(settings.sortBy);
         setPasswordAccess(settings.passwordAccess);
         setAccessPasswords(settings.accessPasswords);
@@ -37,6 +45,7 @@ export function useSettingsPage() {
             ...currentSettings,
             sources: newSources,
             sortBy,
+            subscriptions,
             searchHistory: true,
             watchHistory: true,
             passwordAccess,
@@ -127,16 +136,119 @@ export function useSettingsPage() {
         URL.revokeObjectURL(url);
     };
 
-    const handleImport = (jsonString: string): boolean => {
-        const success = settingsStore.importSettings(jsonString);
-        if (success) {
+    const handleImportFile = (jsonString: string): boolean => {
+        // 1. Try to import as full settings backup
+        const asBackupSuccess = settingsStore.importSettings(jsonString);
+        if (asBackupSuccess) {
             const settings = settingsStore.getSettings();
             setSources(settings.sources);
             setSortBy(settings.sortBy);
+            setSubscriptions(settings.subscriptions || []);
             setPasswordAccess(settings.passwordAccess);
             setAccessPasswords(settings.accessPasswords);
+            return true;
         }
-        return success;
+
+        // 2. Try to import as source list (JSON format)
+        try {
+            const result = parseSourcesFromJson(jsonString);
+            if (result.totalCount > 0) {
+                return handleImportLink(result, false); // Reuse link import logic
+            }
+        } catch {
+            return false;
+        }
+
+        return false;
+    };
+
+    const handleImportLink = (result: ImportResult, isSync: boolean = false): boolean => {
+        try {
+            // Merge normal sources
+            let updatedSources = mergeSources(sources, result.normalSources);
+
+            // Merge adult sources if needed
+            const currentSettings = settingsStore.getSettings();
+            let updatedAdultSources = mergeSources(currentSettings.adultSources, result.adultSources);
+
+            // Save everything
+            settingsStore.saveSettings({
+                ...currentSettings,
+                sources: updatedSources,
+                adultSources: updatedAdultSources,
+            });
+
+            setSources(updatedSources); // Update local state
+
+            // If strictly creating/editing subscription, we don't reload page usually, but here we might want to refresh UI
+            if (!isSync) {
+                setTimeout(() => window.location.reload(), 1000);
+            }
+
+            return true;
+        } catch (e) {
+            console.error("Import error:", e);
+            return false;
+        }
+    };
+
+    // Subscription Handlers
+    const handleAddSubscription = async (sub: SourceSubscription): Promise<boolean> => {
+        // Verify we can fetch it
+        try {
+            const result = await fetchSourcesFromUrl(sub.url);
+
+            // Import the content
+            handleImportLink(result, true);
+
+            // Add subscription to store
+            const newSubscriptions = [...subscriptions, sub];
+            setSubscriptions(newSubscriptions);
+
+            const currentSettings = settingsStore.getSettings();
+            settingsStore.saveSettings({
+                ...currentSettings,
+                subscriptions: newSubscriptions
+            });
+
+            return true;
+        } catch (e) {
+            console.error(e);
+            throw new Error('无法连接到订阅链接或格式错误');
+        }
+    };
+
+    const handleRemoveSubscription = (id: string) => {
+        const newSubscriptions = subscriptions.filter(s => s.id !== id);
+        setSubscriptions(newSubscriptions);
+
+        const currentSettings = settingsStore.getSettings();
+        settingsStore.saveSettings({
+            ...currentSettings,
+            subscriptions: newSubscriptions
+        });
+    };
+
+    const handleRefreshSubscription = async (sub: SourceSubscription) => {
+        try {
+            const result = await fetchSourcesFromUrl(sub.url);
+            handleImportLink(result, true);
+
+            // Update last updated timestamp
+            const updatedSubscriptions = subscriptions.map(s =>
+                s.id === sub.id ? { ...s, lastUpdated: Date.now() } : s
+            );
+            setSubscriptions(updatedSubscriptions);
+
+            const currentSettings = settingsStore.getSettings();
+            settingsStore.saveSettings({
+                ...currentSettings,
+                subscriptions: updatedSubscriptions
+            });
+        } catch (e) {
+            console.error(e);
+            // Optionally notify user of failure
+        }
     };
 
     const handleRestoreDefaults = () => {
@@ -153,6 +265,7 @@ export function useSettingsPage() {
 
     return {
         sources,
+        subscriptions,
         sortBy,
         passwordAccess,
         accessPasswords,
@@ -175,7 +288,11 @@ export function useSettingsPage() {
         handleAddPassword,
         handleRemovePassword,
         handleExport,
-        handleImport,
+        handleImportFile, // Renamed from handleImport
+        handleImportLink, // New
+        handleAddSubscription, // New
+        handleRemoveSubscription, // New
+        handleRefreshSubscription, // New
         handleRestoreDefaults,
         handleResetAll,
         editingSource,

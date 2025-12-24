@@ -12,6 +12,16 @@ export interface VideoSource {
   headers?: Record<string, string>;
   enabled?: boolean;
   priority?: number;
+  group?: 'normal' | 'adult'; // Categorize source type for routing
+}
+
+// Source Subscription for auto-updating sources from a URL
+export interface SourceSubscription {
+  id: string;
+  name: string;
+  url: string;
+  lastUpdated: number; // timestamp
+  autoRefresh: boolean;
 }
 
 // Video Search Result

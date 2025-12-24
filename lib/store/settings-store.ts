@@ -2,7 +2,7 @@
  * Settings Store - Manages application settings and preferences
  */
 
-import type { VideoSource } from '@/lib/types';
+import type { VideoSource, SourceSubscription } from '@/lib/types';
 import { DEFAULT_SOURCES } from '@/lib/api/default-sources';
 import { ADULT_SOURCES } from '@/lib/api/adult-sources';
 
@@ -19,6 +19,7 @@ export type SortOption =
 export interface AppSettings {
   sources: VideoSource[];
   adultSources: VideoSource[];
+  subscriptions: SourceSubscription[]; // Source subscriptions for auto-update
   sortBy: SortOption;
   searchHistory: boolean;
   watchHistory: boolean;
@@ -45,6 +46,7 @@ export const settingsStore = {
       return {
         sources: getDefaultSources(),
         adultSources: getDefaultAdultSources(),
+        subscriptions: [],
         sortBy: 'default',
         searchHistory: true,
         watchHistory: true,
@@ -63,6 +65,7 @@ export const settingsStore = {
       return {
         sources: getDefaultSources(),
         adultSources: getDefaultAdultSources(),
+        subscriptions: [],
         sortBy: 'default',
         searchHistory: true,
         watchHistory: true,
@@ -82,6 +85,7 @@ export const settingsStore = {
       return {
         sources: Array.isArray(parsed.sources) ? parsed.sources : getDefaultSources(),
         adultSources: Array.isArray(parsed.adultSources) ? parsed.adultSources : getDefaultAdultSources(),
+        subscriptions: Array.isArray(parsed.subscriptions) ? parsed.subscriptions : [],
         sortBy: parsed.sortBy || 'default',
         searchHistory: parsed.searchHistory !== undefined ? parsed.searchHistory : true,
         watchHistory: parsed.watchHistory !== undefined ? parsed.watchHistory : true,
@@ -97,6 +101,7 @@ export const settingsStore = {
       return {
         sources: getDefaultSources(),
         adultSources: getDefaultAdultSources(),
+        subscriptions: [],
         sortBy: 'default',
         searchHistory: true,
         watchHistory: true,

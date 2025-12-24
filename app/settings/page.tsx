@@ -36,7 +36,12 @@ export default function SettingsPage() {
     handleAddPassword,
     handleRemovePassword,
     handleExport,
-    handleImport,
+    handleImportFile,
+    handleImportLink,
+    subscriptions,
+    handleAddSubscription,
+    handleRemoveSubscription,
+    handleRefreshSubscription,
     handleRestoreDefaults,
     handleResetAll,
     editingSource,
@@ -107,7 +112,12 @@ export default function SettingsPage() {
       <ImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        onImport={handleImport}
+        onImportFile={handleImportFile}
+        onImportLink={handleImportLink}
+        subscriptions={subscriptions}
+        onAddSubscription={handleAddSubscription}
+        onRemoveSubscription={handleRemoveSubscription}
+        onRefreshSubscription={handleRefreshSubscription}
       />
 
       <ConfirmDialog
