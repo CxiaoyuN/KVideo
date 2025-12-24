@@ -30,10 +30,10 @@ export function DesktopOverlay({
 }: DesktopOverlayProps) {
     return (
         <>
-            {/* Loading Spinner */}
+            {/* Loading Spinner - Glass Effect */}
             {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="spinner"></div>
+                <div className="loading-overlay-glass">
+                    <div className="spinner-glass"></div>
                 </div>
             )}
 

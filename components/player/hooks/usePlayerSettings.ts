@@ -16,6 +16,7 @@ export function usePlayerSettings() {
             skipIntroSeconds: stored.skipIntroSeconds,
             autoSkipOutro: stored.autoSkipOutro,
             skipOutroSeconds: stored.skipOutroSeconds,
+            showModeIndicator: stored.showModeIndicator,
         };
     });
 
@@ -29,6 +30,7 @@ export function usePlayerSettings() {
                 skipIntroSeconds: stored.skipIntroSeconds,
                 autoSkipOutro: stored.autoSkipOutro,
                 skipOutroSeconds: stored.skipOutroSeconds,
+                showModeIndicator: stored.showModeIndicator,
             });
         });
         return unsubscribe;
@@ -65,6 +67,10 @@ export function usePlayerSettings() {
         updateSetting('skipOutroSeconds', Math.max(0, value));
     }, [updateSetting]);
 
+    const setShowModeIndicator = useCallback((value: boolean) => {
+        updateSetting('showModeIndicator', value);
+    }, [updateSetting]);
+
     return {
         ...settings,
         setAutoNextEpisode,
@@ -72,5 +78,6 @@ export function usePlayerSettings() {
         setSkipIntroSeconds,
         setAutoSkipOutro,
         setSkipOutroSeconds,
+        setShowModeIndicator,
     };
 }

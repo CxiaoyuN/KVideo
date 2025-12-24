@@ -31,6 +31,7 @@ export interface AppSettings {
   skipIntroSeconds: number;
   autoSkipOutro: boolean;
   skipOutroSeconds: number;
+  showModeIndicator: boolean; // Show '直连模式'/'代理模式' badge on player
 }
 
 import { exportSettings, importSettings, SEARCH_HISTORY_KEY, WATCH_HISTORY_KEY } from './settings-helpers';
@@ -57,6 +58,7 @@ export const settingsStore = {
         skipIntroSeconds: 0,
         autoSkipOutro: false,
         skipOutroSeconds: 0,
+        showModeIndicator: false,
       };
     }
 
@@ -76,6 +78,7 @@ export const settingsStore = {
         skipIntroSeconds: 0,
         autoSkipOutro: false,
         skipOutroSeconds: 0,
+        showModeIndicator: false,
       };
     }
 
@@ -96,6 +99,7 @@ export const settingsStore = {
         skipIntroSeconds: typeof parsed.skipIntroSeconds === 'number' ? parsed.skipIntroSeconds : 0,
         autoSkipOutro: parsed.autoSkipOutro !== undefined ? parsed.autoSkipOutro : false,
         skipOutroSeconds: typeof parsed.skipOutroSeconds === 'number' ? parsed.skipOutroSeconds : 0,
+        showModeIndicator: parsed.showModeIndicator !== undefined ? parsed.showModeIndicator : false,
       };
     } catch {
       return {
@@ -112,6 +116,7 @@ export const settingsStore = {
         skipIntroSeconds: 0,
         autoSkipOutro: false,
         skipOutroSeconds: 0,
+        showModeIndicator: false,
       };
     }
   },

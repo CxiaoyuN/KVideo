@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { useHistoryStore } from '@/lib/store/history-store';
+import { settingsStore } from '@/lib/store/settings-store';
 import { CustomVideoPlayer } from './CustomVideoPlayer';
 import { VideoPlayerError } from './VideoPlayerError';
 import { VideoPlayerEmpty } from './VideoPlayerEmpty';
@@ -24,6 +25,16 @@ export function VideoPlayer({ playUrl, videoId, currentEpisode, onBack, totalEpi
   const [shouldAutoPlay, setShouldAutoPlay] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const MAX_MANUAL_RETRIES = 20;
+  const lastSaveTimeRef = useRef(0);
+  const currentTimeRef = useRef(0);
+  const durationRef = useRef(0);
+  const SAVE_INTERVAL = 5000; // 5 seconds throttle
+
+  // Get showModeIndicator setting
+  const [showModeIndicator, setShowModeIndicator] = useState(false);
+  useEffect(() => {
+    setShowModeIndicator(settingsStore.getSettings().showModeIndicator);
+  }, []);
 
   // Use reactive hook to subscribe to history updates
   // This ensures the component re-renders when history is hydrated from localStorage
@@ -54,25 +65,50 @@ export function VideoPlayer({ playUrl, videoId, currentEpisode, onBack, totalEpi
     return historyItem ? historyItem.playbackPosition : 0;
   };
 
-  // Handle time updates and save progress
+  // Save progress function (used by throttle and beforeunload)
+  const saveProgress = useCallback((currentTime: number, duration: number) => {
+    if (!videoId || !playUrl || duration === 0 || currentTime <= 1) return;
+    addToHistory(
+      videoId,
+      title,
+      playUrl,
+      currentEpisode,
+      source,
+      currentTime,
+      duration,
+      undefined,
+      []
+    );
+  }, [videoId, playUrl, title, currentEpisode, source, addToHistory]);
+
+  // Handle time updates and save progress (throttled to every 5 seconds)
   const handleTimeUpdate = (currentTime: number, duration: number) => {
+    // Always track current time for beforeunload
+    currentTimeRef.current = currentTime;
+    durationRef.current = duration;
+
     if (!videoId || !playUrl || duration === 0) return;
 
-    // Save progress every few seconds
-    if (currentTime > 1) {
-      addToHistory(
-        videoId,
-        title,
-        playUrl,
-        currentEpisode,
-        source,
-        currentTime,
-        duration,
-        undefined,
-        []
-      );
+    const now = Date.now();
+    // Only save if enough time has passed since last save
+    if (currentTime > 1 && now - lastSaveTimeRef.current >= SAVE_INTERVAL) {
+      lastSaveTimeRef.current = now;
+      saveProgress(currentTime, duration);
     }
   };
+
+  // Save on page leave/refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Save current progress before leaving
+      if (currentTimeRef.current > 1 && durationRef.current > 0) {
+        saveProgress(currentTimeRef.current, durationRef.current);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [saveProgress]);
 
   // Handle video errors
   const handleVideoError = (error: string) => {
@@ -117,7 +153,18 @@ export function VideoPlayer({ playUrl, videoId, currentEpisode, onBack, totalEpi
   }
 
   return (
-    <Card hover={false} className="p-0 overflow-hidden">
+    <Card hover={false} className="p-0 overflow-hidden relative">
+      {/* Mode Indicator Badge - controlled by settings */}
+      {showModeIndicator && (
+        <div className="absolute top-3 right-3 z-30">
+          <span className={`px-2 py-1 text-xs font-medium rounded-full backdrop-blur-md transition-all duration-300 ${useProxy
+              ? 'bg-orange-500/80 text-white'
+              : 'bg-green-500/80 text-white'
+            }`}>
+            {useProxy ? '代理模式' : '直连模式'}
+          </span>
+        </div>
+      )}
       {videoError ? (
         <VideoPlayerError
           error={videoError}

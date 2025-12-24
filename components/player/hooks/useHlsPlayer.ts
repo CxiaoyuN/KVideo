@@ -6,13 +6,15 @@ interface UseHlsPlayerProps {
     src: string;
     autoPlay?: boolean;
     onAutoPlayPrevented?: (error: Error) => void;
+    onError?: (message: string) => void;
 }
 
 export function useHlsPlayer({
     videoRef,
     src,
     autoPlay = false,
-    onAutoPlayPrevented
+    onAutoPlayPrevented,
+    onError
 }: UseHlsPlayerProps) {
     const hlsRef = useRef<Hls | null>(null);
 
@@ -80,6 +82,8 @@ export function useHlsPlayer({
                                 console.warn('[HLS] ⚠️ HEVC/H.265 codec detected - may not play in all browsers');
                                 console.warn('[HLS] Supported: Safari with hardware acceleration, some Edge versions');
                                 console.warn('[HLS] Not supported: Most Chrome/Firefox versions');
+                                // Notify parent about potential codec issues
+                                onError?.('检测到 HEVC/H.265 编码，当前浏览器可能不支持');
                             }
                         }
                     }
@@ -106,6 +110,8 @@ export function useHlsPlayer({
                                     hls?.startLoad();
                                 } else {
                                     console.error('[HLS] Too many network errors, giving up');
+                                    onError?.('网络错误：无法加载视频流');
+                                    hls?.destroy();
                                 }
                                 break;
                             case Hls.ErrorTypes.MEDIA_ERROR:
@@ -115,10 +121,13 @@ export function useHlsPlayer({
                                     hls?.recoverMediaError();
                                 } else {
                                     console.error('[HLS] Too many media errors, giving up');
+                                    onError?.('媒体错误：视频格式不支持或已损坏');
+                                    hls?.destroy();
                                 }
                                 break;
                             default:
                                 console.error('[HLS] Fatal error, cannot recover:', data);
+                                onError?.(`致命错误：${data.details || '未知错误'}`);
                                 hls?.destroy();
                                 break;
                         }
@@ -136,6 +145,7 @@ export function useHlsPlayer({
             video.src = src;
         } else {
             console.error('[HLS] HLS not supported in this browser');
+            onError?.('当前浏览器不支持 HLS 视频播放');
         }
 
         return () => {
@@ -143,5 +153,5 @@ export function useHlsPlayer({
                 hls.destroy();
             }
         };
-    }, [src, videoRef, autoPlay, onAutoPlayPrevented]);
+    }, [src, videoRef, autoPlay, onAutoPlayPrevented, onError]);
 }

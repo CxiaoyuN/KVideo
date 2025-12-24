@@ -35,11 +35,13 @@ export function MobileMoreMenu({
         skipIntroSeconds,
         autoSkipOutro,
         skipOutroSeconds,
+        showModeIndicator,
         setAutoNextEpisode,
         setAutoSkipIntro,
         setSkipIntroSeconds,
         setAutoSkipOutro,
         setSkipOutroSeconds,
+        setShowModeIndicator,
     } = usePlayerSettings();
 
     if (!showMoreMenu) return null;
@@ -88,6 +90,33 @@ export function MobileMoreMenu({
                 )}
 
                 <div className="h-px bg-white/10 my-1" />
+
+                {/* Show Mode Indicator Switch */}
+                <div
+                    className="w-full px-4 py-3 flex items-center justify-between"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="flex items-center gap-3 text-sm text-white">
+                        <Icons.Zap size={18} />
+                        <span>显示模式指示器</span>
+                    </div>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowModeIndicator(!showModeIndicator);
+                        }}
+                        className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${showModeIndicator ? 'bg-[var(--accent-color)]' : 'bg-white/20'
+                            }`}
+                        aria-checked={showModeIndicator}
+                        role="switch"
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
+                    >
+                        <span
+                            className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${showModeIndicator ? 'translate-x-4' : 'translate-x-0'
+                                }`}
+                        />
+                    </button>
+                </div>
 
                 {/* Auto Next Episode Switch */}
                 <div

@@ -5,6 +5,7 @@ import { useMobilePlayerState } from './hooks/useMobilePlayerState';
 import { useMobilePlayerLogic } from './hooks/useMobilePlayerLogic';
 import { useMobileGestures } from './hooks/useMobileGestures';
 import { useAutoSkip } from './hooks/useAutoSkip';
+import { useHlsPlayer } from './hooks/useHlsPlayer';
 import { MobileControlsWrapper } from './mobile/MobileControlsWrapper';
 import { MobileOverlay } from './mobile/MobileOverlay';
 import { MobileSkipIndicator } from './mobile/MobileSkipIndicator';
@@ -40,6 +41,14 @@ export function MobileVideoPlayer({
     containerRef,
     controlsTimeoutRef
   } = refs;
+
+  // Initialize HLS Player (same as Desktop - fixes Android Chrome playback)
+  useHlsPlayer({
+    videoRef,
+    src,
+    autoPlay: shouldAutoPlay,
+    onError,
+  });
 
   const {
     isPlaying,
@@ -107,11 +116,10 @@ export function MobileVideoPlayer({
       ref={containerRef}
       className="relative aspect-video bg-black rounded-[var(--radius-2xl)] overflow-hidden"
     >
-      {/* Video Element */}
+      {/* Video Element - src is set by useHlsPlayer hook */}
       <video
         ref={videoRef}
         className="w-full h-full object-contain touch-none"
-        src={src}
         poster={poster}
         onPlay={handlePlay}
         onPause={handlePause}
