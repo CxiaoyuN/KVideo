@@ -1,0 +1,47 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # 每6小时运行一次
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set Git Config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream
+        run: |
+          git remote add upstream https://github.com/KuekHaoYang/KVideo.git
+          git fetch upstream
+
+      - name: Merge upstream/main into main
+        run: |
+          git checkout main
+          git merge upstream/main --allow-unrelated-histories --no-edit || true
+
+      - name: Remove upstream workflows but keep local Sync.yml
+        run: |
+          # 删除所有上游 workflows
+          rm -rf .github/workflows/*
+          # 恢复本地的 Sync.yml（假设你已经提交过）
+          git checkout HEAD -- .github/workflows/Sync.yml
+          git add .github/workflows/Sync.yml
+          git commit -m "chore: keep local Sync.yml, remove upstream workflows" || true
+
+      - name: Push changes
+        run: |
+          git push origin main
