@@ -3,7 +3,8 @@ import { DesktopOverlay } from './DesktopOverlay';
 import { useDesktopPlayerState } from '../hooks/useDesktopPlayerState';
 
 interface DesktopOverlayWrapperProps {
-    state: ReturnType<typeof useDesktopPlayerState>['state'];
+    data: ReturnType<typeof useDesktopPlayerState>['data'];
+    actions: ReturnType<typeof useDesktopPlayerState>['actions'];
     showControls: boolean;
     onTogglePlay: () => void;
     onSkipForward: () => void;
@@ -22,10 +23,12 @@ interface DesktopOverlayWrapperProps {
     onSpeedChange: (speed: number) => void;
     onSpeedMenuMouseEnter: () => void;
     onSpeedMenuMouseLeave: () => void;
+    containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function DesktopOverlayWrapper({
-    state,
+    data,
+    actions,
     showControls,
     onTogglePlay,
     onSkipForward,
@@ -42,7 +45,8 @@ export function DesktopOverlayWrapper({
     onToggleSpeedMenu,
     onSpeedChange,
     onSpeedMenuMouseEnter,
-    onSpeedMenuMouseLeave
+    onSpeedMenuMouseLeave,
+    containerRef,
 }: DesktopOverlayWrapperProps) {
     const {
         isLoading,
@@ -55,7 +59,7 @@ export function DesktopOverlayWrapper({
         isSkipBackwardAnimatingOut,
         showToast,
         toastMessage,
-    } = state;
+    } = data;
 
     return (
         <DesktopOverlay
@@ -86,6 +90,7 @@ export function DesktopOverlayWrapper({
             onSpeedChange={onSpeedChange}
             onSpeedMenuMouseEnter={onSpeedMenuMouseEnter}
             onSpeedMenuMouseLeave={onSpeedMenuMouseLeave}
+            containerRef={containerRef}
         />
     );
 }

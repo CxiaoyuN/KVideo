@@ -1,6 +1,11 @@
 'use client';
 
-import { memo } from 'react';
+/**
+ * VideoGroupCard - Displays grouped videos with same name as single card
+ * Following Liquid Glass design system
+ */
+
+import { memo, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card } from '@/components/ui/Card';
@@ -8,25 +13,62 @@ import { Badge } from '@/components/ui/Badge';
 import { Icons } from '@/components/ui/Icon';
 import { LatencyBadge } from '@/components/ui/LatencyBadge';
 import { FavoriteButton } from '@/components/favorites/FavoriteButton';
-
 import { Video } from '@/lib/types';
 import { parseVideoTitle } from '@/lib/utils/video';
 
-interface VideoCardProps {
-    video: Video;
-    videoUrl: string;
+export interface GroupedVideo {
+    /** Representative video (lowest latency) */
+    representative: Video;
+    /** All videos in this group */
+    videos: Video[];
+    /** Group name (vod_name) */
+    name: string;
+}
+
+interface VideoGroupCardProps {
+    group: GroupedVideo;
     cardId: string;
     isActive: boolean;
     onCardClick: (e: React.MouseEvent, cardId: string, videoUrl: string) => void;
 }
 
-export const VideoCard = memo<VideoCardProps>(({
-    video,
-    videoUrl,
+export const VideoGroupCard = memo<VideoGroupCardProps>(({
+    group,
     cardId,
     isActive,
     onCardClick
 }) => {
+    const { representative, videos, name } = group;
+
+    // Best latency from the group
+    const bestLatency = useMemo(() => {
+        const latencies = videos.filter(v => v.latency !== undefined).map(v => v.latency!);
+        return latencies.length > 0 ? Math.min(...latencies) : undefined;
+    }, [videos]);
+
+    // Generate URL with grouped sources data
+    const videoUrl = useMemo(() => {
+        const params = new URLSearchParams({
+            id: String(representative.vod_id),
+            source: representative.source,
+            title: representative.vod_name,
+        });
+
+        // Add group data if multiple sources
+        if (videos.length > 1) {
+            const groupData = videos.map(v => ({
+                id: v.vod_id,
+                source: v.source,
+                sourceName: v.sourceName,
+                latency: v.latency,
+                pic: v.vod_pic,
+            }));
+            params.set('groupedSources', JSON.stringify(groupData));
+        }
+
+        return `/player?${params.toString()}`;
+    }, [representative, videos]);
+
     return (
         <div
             style={{
@@ -41,7 +83,7 @@ export const VideoCard = memo<VideoCardProps>(({
                 href={videoUrl}
                 onClick={(e) => onCardClick(e, cardId, videoUrl)}
                 role="listitem"
-                aria-label={`${video.vod_name}${video.vod_remarks ? ` - ${video.vod_remarks}` : ''}`}
+                aria-label={`${name} - ${videos.length} 个源${representative.vod_remarks ? ` - ${representative.vod_remarks}` : ''}`}
                 prefetch={false}
                 className="group cursor-pointer hover:translate-y-[-2px] transition-transform duration-200 ease-out block h-full"
             >
@@ -55,10 +97,10 @@ export const VideoCard = memo<VideoCardProps>(({
                 >
                     {/* Poster */}
                     <div className="relative aspect-[2/3] bg-[color-mix(in_srgb,var(--glass-bg)_50%,transparent)] rounded-[var(--radius-2xl)] overflow-hidden">
-                        {video.vod_pic ? (
+                        {representative.vod_pic ? (
                             <Image
-                                src={video.vod_pic}
-                                alt={video.vod_name}
+                                src={representative.vod_pic}
+                                alt={name}
                                 fill
                                 className="object-cover rounded-[var(--radius-2xl)]"
                                 sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw"
@@ -83,28 +125,28 @@ export const VideoCard = memo<VideoCardProps>(({
 
                         {/* Badge Container */}
                         <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between gap-1">
-                            {video.sourceName && (
-                                <Badge variant="primary" className="bg-[var(--accent-color)] flex-shrink-0 max-w-[50%] truncate">
-                                    {video.sourceName}
-                                </Badge>
-                            )}
+                            {/* Source count badge */}
+                            <Badge variant="primary" className="bg-[var(--accent-color)] flex-shrink-0">
+                                <Icons.Layers size={12} className="mr-1" />
+                                {videos.length} 源
+                            </Badge>
 
-                            {video.latency !== undefined && (
-                                <LatencyBadge latency={video.latency} className="flex-shrink-0" />
+                            {bestLatency !== undefined && (
+                                <LatencyBadge latency={bestLatency} className="flex-shrink-0" />
                             )}
                         </div>
 
                         {/* Favorite Button - Top Right */}
                         <div className={`absolute top-2 right-2 z-20 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                             <FavoriteButton
-                                videoId={video.vod_id}
-                                source={video.source}
-                                title={video.vod_name}
-                                poster={video.vod_pic}
-                                sourceName={video.sourceName}
-                                type={video.type_name}
-                                year={video.vod_year}
-                                remarks={video.vod_remarks}
+                                videoId={representative.vod_id}
+                                source={representative.source}
+                                title={name}
+                                poster={representative.vod_pic}
+                                sourceName={representative.sourceName}
+                                type={representative.type_name}
+                                year={representative.vod_year}
+                                remarks={representative.vod_remarks}
                                 size={16}
                                 className="shadow-md"
                             />
@@ -124,15 +166,15 @@ export const VideoCard = memo<VideoCardProps>(({
                                         再次点击播放 →
                                     </div>
                                 )}
-                                {video.type_name && (
+                                {representative.type_name && (
                                     <Badge variant="secondary" className="text-xs mb-2">
-                                        {video.type_name}
+                                        {representative.type_name}
                                     </Badge>
                                 )}
-                                {video.vod_year && (
+                                {representative.vod_year && (
                                     <div className="flex items-center gap-1 text-white/80 text-xs">
                                         <Icons.Calendar size={12} />
-                                        <span>{video.vod_year}</span>
+                                        <span>{representative.vod_year}</span>
                                     </div>
                                 )}
                             </div>
@@ -142,9 +184,8 @@ export const VideoCard = memo<VideoCardProps>(({
                     {/* Info */}
                     <div className="p-3 flex-1 flex flex-col">
                         {(() => {
-                            const { cleanTitle, quality } = parseVideoTitle(video.vod_name);
-                            // Visual priority: Quality from title tag, then vod_remarks
-                            const displayQuality = quality || video.vod_remarks;
+                            const { cleanTitle, quality } = parseVideoTitle(name);
+                            const displayQuality = quality || representative.vod_remarks;
 
                             return (
                                 <>
@@ -154,12 +195,6 @@ export const VideoCard = memo<VideoCardProps>(({
                                     {displayQuality && (
                                         <p className="text-xs text-[var(--text-color-secondary)] font-medium">
                                             {displayQuality}
-                                        </p>
-                                    )}
-                                    {/* Hide remarks if it was used as quality to avoid duplication */}
-                                    {video.vod_remarks && video.vod_remarks !== displayQuality && (
-                                        <p className="text-xs text-[var(--text-color-secondary)] mt-1 line-clamp-1">
-                                            {video.vod_remarks}
                                         </p>
                                     )}
                                 </>
@@ -172,5 +207,4 @@ export const VideoCard = memo<VideoCardProps>(({
     );
 });
 
-VideoCard.displayName = 'VideoCard';
-
+VideoGroupCard.displayName = 'VideoGroupCard';
