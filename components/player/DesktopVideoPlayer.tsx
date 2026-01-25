@@ -8,6 +8,8 @@ import { useAutoSkip } from './hooks/useAutoSkip';
 import { useStallDetection } from './hooks/useStallDetection';
 import { DesktopControlsWrapper } from './desktop/DesktopControlsWrapper';
 import { DesktopOverlayWrapper } from './desktop/DesktopOverlayWrapper';
+import { usePlayerSettings } from './hooks/usePlayerSettings';
+import './web-fullscreen.css';
 
 interface DesktopVideoPlayerProps {
   src: string;
@@ -36,6 +38,7 @@ export function DesktopVideoPlayer({
   isReversed = false,
 }: DesktopVideoPlayerProps) {
   const { refs, data, actions } = useDesktopPlayerState();
+  const { fullscreenType } = usePlayerSettings();
 
   // Initialize HLS Player
   useHlsPlayer({
@@ -75,7 +78,8 @@ export function DesktopVideoPlayer({
     onTimeUpdate,
     refs,
     data,
-    actions
+    actions,
+    fullscreenType
   });
 
   // Auto-skip intro/outro and auto-next episode
@@ -113,73 +117,80 @@ export function DesktopVideoPlayer({
   return (
     <div
       ref={containerRef}
-      className="relative aspect-video bg-black rounded-[var(--radius-2xl)] overflow-hidden group"
+      className={`kvideo-container relative aspect-video bg-black rounded-[var(--radius-2xl)] group ${data.isFullscreen && fullscreenType === 'window' ? 'is-web-fullscreen' : ''
+        }`}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => isPlaying && setShowControls(false)}
     >
-      {/* Video Element */}
-      <video
-        ref={videoRef}
-        className="w-full h-full object-contain"
-        poster={poster}
-        x-webkit-airplay="allow"
-        onPlay={handlePlay}
-        onPause={handlePause}
-        onTimeUpdate={handleTimeUpdateEvent}
-        onLoadedMetadata={handleLoadedMetadata}
-        onError={handleVideoError}
-        onWaiting={() => setIsLoading(true)}
-        onCanPlay={() => setIsLoading(false)}
-        onClick={togglePlay}
-      />
+      {/* Clipping Wrapper for video and overlays - Restores the 'Liquid Glass' rounded look */}
+      <div className={`absolute inset-0 overflow-hidden pointer-events-none ${data.isFullscreen && fullscreenType === 'window' ? 'rounded-0' : 'rounded-[var(--radius-2xl)]'
+        }`}>
+        <div className="absolute inset-0 pointer-events-auto">
+          {/* Video Element */}
+          <video
+            ref={videoRef}
+            className="w-full h-full object-contain"
+            poster={poster}
+            x-webkit-airplay="allow"
+            onPlay={handlePlay}
+            onPause={handlePause}
+            onTimeUpdate={handleTimeUpdateEvent}
+            onLoadedMetadata={handleLoadedMetadata}
+            onError={handleVideoError}
+            onWaiting={() => setIsLoading(true)}
+            onCanPlay={() => setIsLoading(false)}
+            onClick={togglePlay}
+          />
 
-      <DesktopOverlayWrapper
-        data={data}
-        actions={actions}
-        showControls={data.showControls}
-        onTogglePlay={togglePlay}
-        onSkipForward={logic.skipForward}
-        onSkipBackward={logic.skipBackward}
-        isTransitioningToNextEpisode={isTransitioningToNextEpisode}
-        // More Menu Props
-        showMoreMenu={data.showMoreMenu}
-        isProxied={src.includes('/api/proxy')}
-        onToggleMoreMenu={() => actions.setShowMoreMenu(!data.showMoreMenu)}
-        onMoreMenuMouseEnter={() => {
-          if (refs.moreMenuTimeoutRef.current) {
-            clearTimeout(refs.moreMenuTimeoutRef.current);
-            refs.moreMenuTimeoutRef.current = null;
-          }
-        }}
-        onMoreMenuMouseLeave={() => {
-          if (refs.moreMenuTimeoutRef.current) {
-            clearTimeout(refs.moreMenuTimeoutRef.current);
-          }
-          refs.moreMenuTimeoutRef.current = setTimeout(() => {
-            actions.setShowMoreMenu(false);
-            refs.moreMenuTimeoutRef.current = null;
-          }, 800); // Increased timeout for better stability
-        }}
-        onCopyLink={logic.handleCopyLink}
-        // Speed Menu Props
-        playbackRate={data.playbackRate}
-        showSpeedMenu={data.showSpeedMenu}
-        speeds={[0.5, 0.75, 1, 1.25, 1.5, 2]}
-        onToggleSpeedMenu={() => actions.setShowSpeedMenu(!data.showSpeedMenu)}
-        onSpeedChange={logic.changePlaybackSpeed}
-        onSpeedMenuMouseEnter={logic.clearSpeedMenuTimeout}
-        onSpeedMenuMouseLeave={logic.startSpeedMenuTimeout}
-        // Portal container
-        containerRef={containerRef}
-      />
+          <DesktopOverlayWrapper
+            data={data}
+            actions={actions}
+            showControls={data.showControls}
+            onTogglePlay={togglePlay}
+            onSkipForward={logic.skipForward}
+            onSkipBackward={logic.skipBackward}
+            isTransitioningToNextEpisode={isTransitioningToNextEpisode}
+            // More Menu Props
+            showMoreMenu={data.showMoreMenu}
+            isProxied={src.includes('/api/proxy')}
+            onToggleMoreMenu={() => actions.setShowMoreMenu(!data.showMoreMenu)}
+            onMoreMenuMouseEnter={() => {
+              if (refs.moreMenuTimeoutRef.current) {
+                clearTimeout(refs.moreMenuTimeoutRef.current);
+                refs.moreMenuTimeoutRef.current = null;
+              }
+            }}
+            onMoreMenuMouseLeave={() => {
+              if (refs.moreMenuTimeoutRef.current) {
+                clearTimeout(refs.moreMenuTimeoutRef.current);
+              }
+              refs.moreMenuTimeoutRef.current = setTimeout(() => {
+                actions.setShowMoreMenu(false);
+                refs.moreMenuTimeoutRef.current = null;
+              }, 800); // Increased timeout for better stability
+            }}
+            onCopyLink={logic.handleCopyLink}
+            // Speed Menu Props
+            playbackRate={data.playbackRate}
+            showSpeedMenu={data.showSpeedMenu}
+            speeds={[0.5, 0.75, 1, 1.25, 1.5, 2]}
+            onToggleSpeedMenu={() => actions.setShowSpeedMenu(!data.showSpeedMenu)}
+            onSpeedChange={logic.changePlaybackSpeed}
+            onSpeedMenuMouseEnter={logic.clearSpeedMenuTimeout}
+            onSpeedMenuMouseLeave={logic.startSpeedMenuTimeout}
+            // Portal container
+            containerRef={containerRef}
+          />
 
-      <DesktopControlsWrapper
-        src={src}
-        data={data}
-        actions={actions}
-        logic={logic}
-        refs={refs}
-      />
+          <DesktopControlsWrapper
+            src={src}
+            data={data}
+            actions={actions}
+            logic={logic}
+            refs={refs}
+          />
+        </div>
+      </div>
     </div>
   );
 }
