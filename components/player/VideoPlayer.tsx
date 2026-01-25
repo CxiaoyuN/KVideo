@@ -195,7 +195,7 @@ export function VideoPlayer({
         />
       ) : (
         <CustomVideoPlayer
-          key={`${useProxy ? 'proxy' : 'direct'}-${retryCount}`} // Only remount when switching modes or retrying, NOT when changing episodes
+          key={`${useProxy ? 'proxy' : 'direct'}-${retryCount}-${source}`} // Remount when switching sources, modes, or retrying
           src={finalPlayUrl}
           onError={handleVideoError}
           onTimeUpdate={handleTimeUpdate}
